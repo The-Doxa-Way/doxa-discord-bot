@@ -1,0 +1,32 @@
+{
+  "name": "doxa-discord-bot",
+  "version": "0.1.0",
+  "description": "DoxaBot for Discord — Christian encouragement and Bible lookup as slash commands. Powered by Doxa MCP.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "The Doxa Way <garth@doxa.app> (https://doxa.app)",
+  "homepage": "https://doxa.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/The-Doxa-Way/doxa-discord-bot.git"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "node --watch --experimental-strip-types src/index.ts",
+    "deploy-commands": "node --experimental-strip-types src/deploy-commands.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@thedoxaway/mcp-client": "file:../doxa-mcp-schema/clients/typescript",
+    "discord.js": "^14.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}

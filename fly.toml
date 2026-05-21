@@ -1,0 +1,30 @@
+# Fly.io deployment config for DoxaBot Discord.
+#
+# Initial deploy:
+#   flyctl launch --no-deploy --copy-config --name doxa-discord-bot
+#   flyctl secrets set DISCORD_BOT_TOKEN=... DISCORD_CLIENT_ID=... ANTHROPIC_API_KEY=...
+#   flyctl deploy
+#
+# This config provisions a tiny always-on machine. Discord bots use a persistent
+# WebSocket connection so they cannot be auto-scaled to zero.
+
+app = "doxa-discord-bot"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# No public services — Discord bots are outbound-only (WebSocket to discord.com).
+# Keep the machine always-on; do not auto-stop.
+[[services]]
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
