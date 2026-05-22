@@ -3,7 +3,8 @@ FROM node:20-slim AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=optional
+COPY thedoxaway-mcp-client-*.tgz ./
+RUN npm install --omit=optional --no-audit --no-fund
 
 COPY tsconfig.json ./
 COPY src ./src
@@ -16,7 +17,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev --omit=optional && npm cache clean --force
+COPY thedoxaway-mcp-client-*.tgz ./
+RUN npm install --omit=dev --omit=optional --no-audit --no-fund && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 

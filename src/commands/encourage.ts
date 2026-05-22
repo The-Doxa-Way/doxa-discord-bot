@@ -43,7 +43,7 @@ export async function handleEncourage(
   const situation = interaction.options.getString('situation', true);
   const movement = (interaction.options.getString('movement') ?? undefined) as DoxaWayMovementId | undefined;
 
-  const result = await doxa.encourage(situation, movement);
+  const result = await doxa.withCaller(`discord:${interaction.user.id}`).encourage(situation, movement);
 
   const scriptureLines = result.scriptures.length
     ? '\n\n' +

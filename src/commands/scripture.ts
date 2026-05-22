@@ -22,7 +22,7 @@ export async function handleScripture(
   await interaction.deferReply();
 
   const reference = interaction.options.getString('reference', true);
-  const result = await doxa.scripture(reference);
+  const result = await doxa.withCaller(`discord:${interaction.user.id}`).scripture(reference);
 
   await interaction.editReply({
     content: `**[${result.reference}](${result.link})** *(${result.translation})*\n\n${result.text}`,

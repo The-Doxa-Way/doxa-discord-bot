@@ -22,7 +22,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@thedoxaway/mcp-client": "^0.1.0",
+    "@thedoxaway/mcp-client": "file:./thedoxaway-mcp-client-0.2.0.tgz",
     "discord.js": "^14.16.0"
   },
   "devDependencies": {

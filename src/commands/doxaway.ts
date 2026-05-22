@@ -35,8 +35,10 @@ export async function handleDoxaway(
 
   const movementArg = (interaction.options.getString('movement') ?? undefined) as DoxaWayMovementId | undefined;
 
+  const userDoxa = doxa.withCaller(`discord:${interaction.user.id}`);
+
   if (movementArg) {
-    const result = await doxa.wayMovement(movementArg);
+    const result = await userDoxa.wayMovement(movementArg);
     const m = result.movement;
     await interaction.editReply({
       content:
@@ -48,7 +50,7 @@ export async function handleDoxaway(
     return;
   }
 
-  const result = await doxa.wayMovement();
+  const result = await userDoxa.wayMovement();
   const lines = result.movements
     .map((m, i) => `**${i + 1}. ${m.name}** — ${m.short}`)
     .join('\n');
