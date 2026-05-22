@@ -64,7 +64,9 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     if (err instanceof DoxaRateLimitError) {
       await replyEphemeral(
         interaction,
-        `Doxa MCP free-tier rate limit reached (${err.quota.used}/${err.quota.limit} in the last 24h).\nUpgrade to BYOL for unlimited: <${err.byolUrl}>`,
+        `Today's free encouragement is done (${err.quota.used}/${err.quota.limit} in 24h).\n` +
+          `For unlimited, install the Doxa app: <https://doxa.app/get?utm_source=discord&utm_medium=rate-limit>\n` +
+          `Or drop in your own Anthropic key: <${err.byolUrl}>`,
       );
     } else if (err instanceof DoxaError) {
       await replyEphemeral(interaction, `Doxa MCP returned an error: ${err.message}`);
