@@ -1,6 +1,6 @@
 {
   "name": "doxa-discord-bot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DoxaBot for Discord — Christian encouragement and Bible lookup as slash commands. Powered by Doxa MCP.",
   "private": true,
   "type": "module",

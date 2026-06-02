@@ -17,6 +17,8 @@ import { REST, Routes } from 'discord.js';
 import { encourageCommand } from './commands/encourage.js';
 import { scriptureCommand } from './commands/scripture.js';
 import { doxawayCommand } from './commands/doxaway.js';
+import { weighCommand } from './commands/weigh.js';
+import { promiseCommand } from './commands/promise.js';
 
 const DISCORD_BOT_TOKEN = required('DISCORD_BOT_TOKEN');
 const DISCORD_CLIENT_ID = required('DISCORD_CLIENT_ID');
@@ -31,7 +33,13 @@ function required(name: string): string {
   return v;
 }
 
-const commands = [encourageCommand, scriptureCommand, doxawayCommand].map((c) => c.toJSON());
+const commands = [
+  encourageCommand,
+  scriptureCommand,
+  doxawayCommand,
+  weighCommand,
+  promiseCommand,
+].map((c) => c.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(DISCORD_BOT_TOKEN);
 

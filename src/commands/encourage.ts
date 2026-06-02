@@ -4,6 +4,8 @@ import {
 } from 'discord.js';
 import type { DoxaClient, DoxaWayMovementId } from '@thedoxaway/mcp-client';
 
+import { doxaAppRow } from '../components.js';
+
 const MOVEMENT_CHOICES: { name: string; value: DoxaWayMovementId }[] = [
   { name: 'Hear (receive what God is saying)', value: 'hear' },
   { name: 'Discern (wisdom about its source)', value: 'discern' },
@@ -56,5 +58,6 @@ export async function handleEncourage(
 
   await interaction.editReply({
     content: `${movementBadge}${result.text}${scriptureLines}`,
+    components: [doxaAppRow('encourage')],
   });
 }

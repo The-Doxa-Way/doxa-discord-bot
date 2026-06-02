@@ -5,6 +5,8 @@
  *   /encourage  situation:<text> [movement:<doxa-way-movement>]
  *   /scripture  reference:<text>
  *   /doxaway    [movement:<doxa-way-movement>]
+ *   /weigh      word:<text>
+ *   /promise    area:<text, autocomplete>
  *
  * Backed by Doxa MCP at doxa.app/mcp/v1. Uses BYOL (server-side Anthropic key)
  * if ANTHROPIC_API_KEY is set, otherwise the free anon tier (50 calls/day per IP).
@@ -16,6 +18,8 @@ import { DoxaClient, DoxaRateLimitError, DoxaError } from '@thedoxaway/mcp-clien
 import { encourageCommand, handleEncourage } from './commands/encourage.js';
 import { scriptureCommand, handleScripture } from './commands/scripture.js';
 import { doxawayCommand, handleDoxaway } from './commands/doxaway.js';
+import { weighCommand, handleWeigh } from './commands/weigh.js';
+import { promiseCommand, handlePromise, handlePromiseAutocomplete } from './commands/promise.js';
 
 const DISCORD_BOT_TOKEN = required('DISCORD_BOT_TOKEN');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -31,19 +35,44 @@ function required(name: string): string {
 
 const doxa = new DoxaClient({
   anthropicKey: ANTHROPIC_API_KEY,
-  userAgent: 'doxa-discord-bot/0.1.0',
+  userAgent: 'doxa-discord-bot/0.2.0',
 });
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-client.once(Events.ClientReady, (c) => {
+client.once(Events.ClientReady, async (c) => {
   const tier = ANTHROPIC_API_KEY ? 'BYOL' : 'free anon';
   console.log(`✓ DoxaBot online as ${c.user.tag} — ${tier} tier`);
+
+  // Self-register the global slash commands on boot so a deploy == a command
+  // sync. Global PUT is idempotent, so re-running on every restart is safe.
+  // (The standalone `npm run deploy-commands` script still works for targeting
+  // a single dev guild via DISCORD_GUILD_ID.)
+  try {
+    await c.application.commands.set(COMMANDS.map((cmd) => cmd.toJSON()));
+    console.log(`✓ Synced ${COMMANDS.length} global slash command(s).`);
+  } catch (err) {
+    console.error('[register] Failed to sync commands on boot:', err);
+  }
 });
 
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
+  // Autocomplete (e.g. /promise area:) must answer fast and on its own path.
+  if (interaction.isAutocomplete()) {
+    try {
+      if (interaction.commandName === 'promise') {
+        await handlePromiseAutocomplete(interaction);
+      } else {
+        await interaction.respond([]);
+      }
+    } catch (err) {
+      console.error('[autocomplete]', err);
+    }
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
 
   try {
@@ -56,6 +85,12 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
         break;
       case 'doxaway':
         await handleDoxaway(interaction, doxa);
+        break;
+      case 'weigh':
+        await handleWeigh(interaction, doxa);
+        break;
+      case 'promise':
+        await handlePromise(interaction, doxa);
         break;
       default:
         await replyEphemeral(interaction, `Unknown command: \`${interaction.commandName}\``);
@@ -90,6 +125,12 @@ async function replyEphemeral(
 }
 
 // Surface the command definitions for the deploy-commands script.
-export const COMMANDS = [encourageCommand, scriptureCommand, doxawayCommand];
+export const COMMANDS = [
+  encourageCommand,
+  scriptureCommand,
+  doxawayCommand,
+  weighCommand,
+  promiseCommand,
+];
 
 client.login(DISCORD_BOT_TOKEN);

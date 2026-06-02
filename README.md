@@ -2,11 +2,15 @@
 
 Christian encouragement and Bible lookup as Discord slash commands. Powered by [Doxa MCP](https://doxa.app/mcp).
 
-Three slash commands:
+Five slash commands:
 
 - `/encourage situation:<text> [movement:<one-of-9>]` — Doxa-voice encouragement for what you're facing
 - `/scripture reference:<text>` — Bible verse lookup (Berean Standard Bible)
 - `/doxaway [movement:<one-of-9>]` — The 9-movement Doxa Way framework
+- `/weigh word:<text>` — Test a word or impression against Scripture (the "test everything; hold fast the good" movement, 1 Thess 5:20-21)
+- `/promise area:<text>` — A Scripture promise to stand on for an area of life (autocomplete suggests common areas)
+
+Interactive features: **autocomplete** on `/promise area`, and a **Link button** to the Doxa app on encouragement replies.
 
 Built on `@thedoxaway/mcp-client`, runs anywhere Node 20+ runs (Fly.io, Railway, Render, bare metal).
 
@@ -45,7 +49,7 @@ npm install
 npm run deploy-commands
 ```
 
-You should see `✓ Registered 3 guild command(s)` (or global). With `DISCORD_GUILD_ID` set, commands appear in your test guild immediately. Without it, global commands take up to 1 hour to propagate.
+You should see `✓ Registered 5 guild command(s)` (or global). With `DISCORD_GUILD_ID` set, commands appear in your test guild immediately. Without it, global commands take up to 1 hour to propagate.
 
 ### 5. Run the bot
 
