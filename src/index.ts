@@ -96,19 +96,24 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
         await replyEphemeral(interaction, `Unknown command: \`${interaction.commandName}\``);
     }
   } catch (err) {
-    if (err instanceof DoxaRateLimitError) {
-      await replyEphemeral(
-        interaction,
-        `Today's free encouragement is done (${err.quota.used}/${err.quota.limit} in 24h).\n` +
-          `For unlimited, install the Doxa app: <https://doxa.app/get?utm_source=discord&utm_medium=rate-limit>\n` +
-          `Or drop in your own Anthropic key: <${err.byolUrl}>`,
-      );
-    } else if (err instanceof DoxaError) {
-      await replyEphemeral(interaction, `Doxa MCP returned an error: ${err.message}`);
-      console.error(`[doxa-error ${err.code}]`, err.message);
-    } else {
-      await replyEphemeral(interaction, 'Something went wrong. Please try again.');
-      console.error('[unexpected]', err);
+    console.error(`[${interaction.commandName}]`, err instanceof Error ? err.message : err);
+    try {
+      if (err instanceof DoxaRateLimitError) {
+        await replyEphemeral(
+          interaction,
+          `Today's free encouragement is done (${err.quota.used}/${err.quota.limit} in 24h).\n` +
+            `For unlimited, install the Doxa app: <https://doxa.app/get?utm_source=discord&utm_medium=rate-limit>\n` +
+            `Or drop in your own Anthropic key: <${err.byolUrl}>`,
+        );
+      } else if (err instanceof DoxaError) {
+        await replyEphemeral(interaction, `Doxa MCP returned an error: ${err.message}`);
+      } else {
+        await replyEphemeral(interaction, 'Something went wrong. Please try again.');
+      }
+    } catch (replyErr) {
+      // Interaction expired or was already acknowledged — log and move on.
+      // Do NOT let this crash the process, which would cause a restart loop.
+      console.error('[reply-failed]', replyErr instanceof Error ? replyErr.message : replyErr);
     }
   }
 });
