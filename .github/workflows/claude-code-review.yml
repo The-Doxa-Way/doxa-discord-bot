@@ -11,7 +11,10 @@ on:
 
 jobs:
   review:
-    if: ${{ github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]' && github.event.pull_request.draft == false }}
+    # workflow_dispatch has no pull_request context, so a condition checking
+    # github.event.pull_request.* would always evaluate false and skip the
+    # job unconditionally on every manual run. Only the actor check applies.
+    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 

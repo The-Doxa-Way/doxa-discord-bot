@@ -6,9 +6,12 @@
 #
 # A doxa-discord-bot PR merge — via mcp__github__merge_pull_request OR a Bash
 # `gh pr merge` — is blocked when the chunk (merge-base(origin/main, tip)..tip,
-# across HEAD and all worktree tips) adds or modifies hand-authored code while
-# changing NO test file. The escape hatch is an EXPLICIT logged waiver in the
-# shared attestation ledger: scripts/attest-review.sh "waived-tests: <reason>".
+# across HEAD and all worktree tips, PLUS the PR's real file list via
+# `gh pr diff` when a PR number is resolvable — a local worktree tip alone
+# can't be trusted to be the PR actually being merged) adds or modifies
+# hand-authored code while changing NO test file. The escape hatch is an
+# EXPLICIT logged waiver in the shared attestation ledger:
+# scripts/attest-review.sh "waived-tests: <reason>".
 #
 # What counts as CODE: src/**/*.{ts,js} (the bot's TypeScript source; dist/ is
 # build output and never counts, .test.ts files are excluded from CODE below
@@ -30,14 +33,31 @@ repo="$(printf '%s' "$payload" | jq -r '.tool_input.repo // empty' 2>/dev/null)"
 cmd="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null)"
 
 dir="${CLAUDE_PROJECT_DIR:-$PWD}"
+remote_head_sha=""    # PR's real head SHA, when resolvable
+remote_changed=""     # PR's real changed-file list (gh pr diff), when resolvable
 
 if [ -n "$repo" ]; then
   # MCP merge tool: gate only this repo.
   [ "$repo" = "doxa-discord-bot" ] || exit 0
+
+  # Resolve the PR's REAL file list + head SHA via gh, the same defence
+  # kg-save-gate.sh's MCP branch already uses — a local worktree tip cannot
+  # be trusted to be the PR actually being merged.
+  mcp_owner="$(printf '%s' "$payload" | jq -r '.tool_input.owner // empty' 2>/dev/null)"
+  mcp_pr="$(printf '%s' "$payload" | jq -r '(.tool_input.pullNumber // empty) | if type == "number" then floor else . end' 2>/dev/null)"
+  if [ -n "$mcp_owner" ] && [ -n "$mcp_pr" ] && command -v gh >/dev/null 2>&1; then
+    case "$mcp_pr" in
+      ''|*[!0-9]*) : ;;
+      *)
+        remote_head_sha="$(gh pr view "$mcp_pr" --repo "$mcp_owner/$repo" --json headRefOid -q .headRefOid 2>/dev/null)"
+        remote_changed="$(gh pr diff "$mcp_pr" --repo "$mcp_owner/$repo" --name-only 2>/dev/null)"
+        ;;
+    esac
+  fi
 elif [ -n "$cmd" ]; then
   # Bash tool: gate only `gh pr merge` at command position (same matching as
   # review-gate.sh — under-block, never over-block).
-  printf '%s' "$cmd" | grep -qE '^[[:space:]]*(cd[[:space:]]+[^;&|]+(&&|;)[[:space:]]*)?([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+)*gh[[:space:]]+pr[[:space:]]+merge([[:space:];&|>]|$)' || exit 0
+  printf '%s' "$cmd" | grep -qE '(^|&&|;)[[:space:]]*(cd[[:space:]]+[^;&|]+(&&|;)[[:space:]]*)?([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+)*gh[[:space:]]+pr[[:space:]]+merge([[:space:];&|>]|$)' || exit 0
 
   flag_repo="$(printf '%s' "$cmd" | grep -oE '(-R|--repo)([[:space:]]+|=)[^[:space:];&|]+' | head -1 | sed -E 's/^(-R|--repo)([[:space:]]+|=)//')"
   if [ -n "$flag_repo" ]; then
@@ -57,6 +77,17 @@ elif [ -n "$cmd" ]; then
     proj_common="$(git -C "${CLAUDE_PROJECT_DIR:-$PWD}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
     [ -n "$proj_common" ] || exit 0
     [ "$repo_common" = "$proj_common" ] || exit 0
+  fi
+
+  # `gh pr merge <N>` names the PR explicitly — resolve its real file list +
+  # head SHA the same way the MCP branch above does.
+  cmd_pr="$(printf '%s' "$cmd" | grep -oE 'pr[[:space:]]+merge[[:space:]]+[0-9]+' | grep -oE '[0-9]+$' | head -1)"
+  if [ -n "$cmd_pr" ] && command -v gh >/dev/null 2>&1; then
+    cmd_pr_repo="${flag_repo:-$(gh repo view "$dir" --json nameWithOwner -q .nameWithOwner 2>/dev/null)}"
+    if [ -n "$cmd_pr_repo" ]; then
+      remote_head_sha="$(gh pr view "$cmd_pr" --repo "$cmd_pr_repo" --json headRefOid -q .headRefOid 2>/dev/null)"
+      remote_changed="$(gh pr diff "$cmd_pr" --repo "$cmd_pr_repo" --name-only 2>/dev/null)"
+    fi
   fi
 else
   exit 0
@@ -92,6 +123,22 @@ while IFS= read -r sha; do
 done <<EOF
 $tips
 EOF
+
+# The PR's real diff (when resolved via gh above) — evaluated directly
+# against its own file list rather than a local merge-base, so it still
+# catches an MCP/`gh pr merge <N>` merge whose head SHA isn't in the local
+# object DB at all.
+if [ -z "$code_without_tests" ] && [ -n "$remote_changed" ]; then
+  tests="$(printf '%s\n' "$remote_changed" | grep -E "$test_re")"
+  code="$(printf '%s\n' "$remote_changed" | grep -vE "$test_re" | grep -E "$code_re")"
+  if [ -n "$code" ] && [ -z "$tests" ]; then
+    waived=""
+    if [ -n "$remote_head_sha" ] && [ -f "$ledger" ] && grep "\"sha\":\"$remote_head_sha\"" "$ledger" 2>/dev/null | grep -q '"verdict":"waived-tests:'; then
+      waived="yes"
+    fi
+    [ -n "$waived" ] || code_without_tests="$code"
+  fi
+fi
 
 [ -z "$code_without_tests" ] && exit 0
 

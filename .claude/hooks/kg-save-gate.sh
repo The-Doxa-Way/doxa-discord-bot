@@ -86,12 +86,14 @@ case "$cmd" in
 esac
 
 # Only gate genuine chunk-LANDING commands. Match the landing verb at COMMAND
-# POSITION (start of string, after optional VAR=val assignments and git/gh
-# options incl. `-C <path>` / `-c <k=v>`) — NOT as a substring — so
+# POSITION — start of string, OR right after a `&&`/`;` chain separator (so
+# the extremely common `git add -A && git commit -m x && git push` one-liner
+# is caught, not just a bare `git push`) — after optional VAR=val assignments
+# and git/gh options incl. `-C <path>` / `-c <k=v>` — NOT as a substring, so
 # `git commit -m '…git push…'` and `grep -r 'git push'` are not spuriously
 # blocked. Known fail-open residual (under-block, never over-block): a landing
-# buried in a compound (`cd x && git push`) — handled below for cd-prefixes.
-printf '%s' "$cmd" | grep -qE '^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+)*(git([[:space:]]+(-[Cc][[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+push([[:space:];&|>]|$)|gh[[:space:]]+pr[[:space:]]+(create|merge)([[:space:];&|>]|$))' || exit 0
+# buried behind a `|` pipe or inside a `$(...)` subshell.
+printf '%s' "$cmd" | grep -qE '(^|&&|;)[[:space:]]*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+)*(git([[:space:]]+(-[Cc][[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+push([[:space:];&|>]|$)|gh[[:space:]]+pr[[:space:]]+(create|merge)([[:space:];&|>]|$))' || exit 0
 
 # The command runs in the Bash tool's PERSISTENT cwd, which may be a different
 # repo than doxa-discord-bot. This gate enforces "kg-save on every chunk" for

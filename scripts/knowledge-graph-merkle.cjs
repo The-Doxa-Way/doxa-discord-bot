@@ -131,13 +131,12 @@ function loadGraph() {
 }
 
 function saveGraph(graph) {
-  // Ensure the directory exists
-  const dir = path.dirname(GRAPH_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  // Atomic write: tmp + rename
-  const tmp = GRAPH_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(graph, null, 2));
-  fs.renameSync(tmp, GRAPH_FILE);
+  // Atomic write (tmp + fsync + rename) via lib/atomic.cjs — the same helper
+  // saveMerkleState below already uses. A raw writeFileSync+renameSync with a
+  // fixed tmp path (the prior version of this function) can be torn by a
+  // crash mid-write, and two concurrent `add` invocations racing the same
+  // fixed tmp filename can clobber each other before either rename lands.
+  atomicWriteJSON(GRAPH_FILE, graph);
   // The generator owns its derived output: every graph write refreshes the
   // cheap navigation surface (.knowledge-graph/INDEX.md) so it can never
   // drift. Failure here must not lose the graph write itself — warn loud.
@@ -504,7 +503,16 @@ function add(args) {
   let entityType = null;
   const positional = [];
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--type' && args[i + 1]) {
+    if (args[i] === '--type') {
+      // --type with no following value (e.g. it's the last arg) used to fall
+      // through to the else branch and get silently pushed onto positional,
+      // shifting entityName/observation/sourceFile/lineNumber by one slot
+      // with no error. Reject explicitly instead.
+      if (!args[i + 1]) {
+        console.log(`${c.red}--type requires a value (e.g. --type System).${c.reset}`);
+        process.exitCode = 1;
+        return;
+      }
       entityType = args[i + 1];
       i++;
     } else {
