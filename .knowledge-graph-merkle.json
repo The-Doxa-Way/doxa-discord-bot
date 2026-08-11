@@ -1,0 +1,42 @@
+{
+  "merkleRoot": "9a3eef9797ee5a4d7c5b29bdf684bc5bc8bcbd1c9f97d93f17e4aac512695fc2",
+  "observations": [
+    {
+      "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
+      "entityName": "LandingGatesInfra",
+      "content": "Bootstrapped Doxa landing-gates infra (kg-guard CI, claude-code-review workflow, kg-save/review/test PreToolUse hooks, attest-review + knowledge-graph-merkle CommonJS scripts) ported from openclaw, adapted for this repo's ESM package.json (.cjs script names) and TS/discord.js/supabase stack.",
+      "provenance": {
+        "sourceFile": ".github/workflows/kg-guard.yml",
+        "lineNumber": 1,
+        "lineRange": null,
+        "fileHash": "61338a69a0349c6c516bf2c4f666d3353ad19847bd516be197684596eb34697c",
+        "totalLines": 63,
+        "extractedAt": "2026-08-11T16:39:49.575Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Workflow"
+      },
+      "timestamp": "2026-08-11T16:39:49.576Z"
+    },
+    {
+      "hash": "a4e81f68b6f9fb7bfbe6c4fc9aceac0d8a877ef1a6683799d7c33fde59120197",
+      "entityName": "LandingGatesInfra",
+      "content": "Second observation to confirm append path still works after saveGraph refactor.",
+      "provenance": {
+        "sourceFile": ".claude/settings.json",
+        "lineNumber": 1,
+        "lineRange": null,
+        "fileHash": "4df470561079e91ad2cc4376dac42ef152c95d4660173c1849de55db54849e58",
+        "totalLines": 66,
+        "extractedAt": "2026-08-11T16:56:06.839Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs"
+      },
+      "timestamp": "2026-08-11T16:56:06.840Z"
+    }
+  ],
+  "lastVerified": "2026-08-11T16:56:06.749Z",
+  "version": 1,
+  "createdAt": "2026-08-11T16:39:44.892Z",
+  "lastModified": "2026-08-11T16:56:06.840Z"
+}

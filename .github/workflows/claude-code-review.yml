@@ -1,0 +1,104 @@
+name: Claude Code Review
+
+# Review is local (b)/(c) via /code-review or a fresh reviewer agent +
+# scripts/attest-review.sh, enforced by .claude/hooks/review-gate.sh. Manual
+# dispatch kept for the rare case a PR-event bot review is wanted — no
+# automatic pull_request trigger (cost-conscious doctrine ported from
+# doxa-cns/openclaw: a floating trigger on every PR burns Actions minutes with
+# no reviewer benefit over the local gate).
+on:
+  workflow_dispatch: {}
+
+jobs:
+  review:
+    # workflow_dispatch has no pull_request context, so a condition checking
+    # github.event.pull_request.* would always evaluate false and skip the
+    # job unconditionally on every manual run. Only the actor check applies.
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Pinned deliberately — bump only when adopting a newer release on
+      # purpose. track_progress:true forces tag mode so the review is
+      # actually POSTED (tracking comment + summary); the default (false)
+      # can "succeed" on every PR while posting zero review comments.
+      - uses: anthropics/claude-code-action@v1.0.152
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Review-bot model parity: the reviewer must be at least as capable
+          # as the models writing the code (Fable-5/Opus-tier).
+          claude_args: "--model claude-opus-4-8"
+          include_fix_links: true
+          track_progress: true
+          # Post inline comments immediately. classify=true (the default)
+          # buffers comments and can drop anything judged a "test/probe".
+          classify_inline_comments: false
+          prompt: |
+            You are reviewing a PR for DoxaBot for Discord (doxa-discord-bot),
+            a Node.js + TypeScript Discord bot built on discord.js. It exposes
+            slash commands (/encourage, /scripture, /doxaway, /weigh,
+            /promise) backed by the hosted Doxa MCP
+            (@thedoxaway/mcp-client) and a supabase/ directory for
+            Supabase-backed state. Read CLAUDE.md and README.md first for
+            project conventions and the command list.
+
+            Review this PR thoroughly. Post inline comments on specific code
+            issues and a summary comment with overall assessment.
+
+            ## Discord-specific lenses (this repo's known risk areas)
+            - Slash-command interaction handlers: unhandled errors inside a
+              command handler (src/commands/*.ts, src/index.ts) that leave an
+              interaction without a reply/deferReply — Discord shows the user
+              a broken "application did not respond" state
+            - Interaction token expiry: Discord interaction tokens are valid
+              for ~15 minutes (~3s for the initial ack). A slow handler
+              (network call to Doxa MCP, Supabase) that doesn't deferReply()
+              before doing async work will silently fail the interaction
+            - Discord API rate limits: repeated calls without honoring
+              429/rate-limit responses, or command/component handlers that
+              can be triggered in a tight loop
+            - Autocomplete and button/component handlers: unhandled
+              rejection paths, stale interaction references
+
+            ## Secrets (block if found)
+            - Hardcoded DISCORD_BOT_TOKEN, DISCORD_CLIENT_ID used as a secret,
+              ANTHROPIC_API_KEY, Supabase URL/keys, or any other credential
+              committed as a literal instead of read from env/.env
+            - Any credential-shaped string (JWT, API key pattern) appearing
+              in source, tests, or fixtures
+
+            ## Supabase correctness
+            - Queries that could run without RLS protection, or that assume
+              row-level security when the client used is actually the
+              service-role key
+            - Service-role key usage from this bot's public-facing process —
+              the bot handles untrusted Discord user input, so service-role
+              credentials must never be reachable from a path a Discord user
+              can influence
+            - Missing error handling on Supabase calls (unchecked `error` in
+              the response, unhandled promise rejection)
+
+            ## TypeScript & general correctness
+            - Type safety: `any`, unsafe casts, missing null/undefined
+              guards on optional Discord.js fields (interaction.options,
+              guild, member, channel)
+            - Error handling: try/catch coverage around external calls (Doxa
+              MCP, Supabase, Discord API), sensible user-facing error replies
+              instead of unhandled exceptions
+            - Test coverage: new or changed logic without a corresponding
+              test change
+
+            Be specific and actionable. Only comment on issues worth fixing —
+            skip style nitpicks. Categorize each finding: HIGH (must fix),
+            MEDIUM (should fix), LOW (nice to have).

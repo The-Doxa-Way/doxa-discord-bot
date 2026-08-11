@@ -1,0 +1,13 @@
+{
+  "entities": [
+    {
+      "name": "LandingGatesInfra",
+      "entityType": "Workflow",
+      "observations": [
+        "Bootstrapped Doxa landing-gates infra (kg-guard CI, claude-code-review workflow, kg-save/review/test PreToolUse hooks, attest-review + knowledge-graph-merkle CommonJS scripts) ported from openclaw, adapted for this repo's ESM package.json (.cjs script names) and TS/discord.js/supabase stack.",
+        "Second observation to confirm append path still works after saveGraph refactor."
+      ]
+    }
+  ],
+  "relations": []
+}
