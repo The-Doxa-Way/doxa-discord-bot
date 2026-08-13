@@ -142,11 +142,11 @@ esac
   return bindir;
 }
 
-function runGate(dir, cmd, ghbin) {
+function runGate(dir, cmd, ghbin, projectDir) {
   try {
     execFileSync('bash', [HOOK], {
       cwd: dir,
-      env: { ...process.env, CLAUDE_PROJECT_DIR: dir, PATH: `${ghbin}:${process.env.PATH}` },
+      env: { ...process.env, CLAUDE_PROJECT_DIR: projectDir || dir, PATH: `${ghbin}:${process.env.PATH}` },
       input: JSON.stringify({ tool_input: { command: cmd }, cwd: dir }),
       stdio: ['pipe', 'pipe', 'pipe'],
     });
@@ -175,5 +175,32 @@ test('gh pr merge passes a correctly-unioned merge (no false positive)', () => {
   assert.strictEqual(result.status, 0, 'a correct union must not be blocked');
 
   fs.rmSync(dir, { recursive: true, force: true });
+  fs.rmSync(ghbin, { recursive: true, force: true });
+});
+
+// Regression test (review 2026-08-13): the merge-integrity block must run
+// AFTER the repo-scoping bail, not before it. A first draft of this hook ran
+// the integrity check before the repo_common/proj_common comparison, so a
+// landing command that `cd`'d into a SIBLING repo (which also carries
+// scripts/check-kg-merge-integrity.cjs, since this feature is meant to land
+// fleet-wide) could get wrongly blocked by that sibling's own merge history
+// — violating the hook's own "must never block a sibling repo's push"
+// contract. This drives the hook with CLAUDE_PROJECT_DIR pointing at a
+// DIFFERENT ("real doxa-discord-bot") repo than the one the landing command
+// actually operates on (a sibling with a dropped observation in its own
+// history) and asserts the sibling's landing is allowed through untouched.
+test('a landing command targeting a SIBLING repo is never blocked by that sibling\'s own merge history', () => {
+  const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kgsg-proj-'));
+  git(['init', '-q', '-b', 'main'], projectDir); // stands in for the real doxa-discord-bot checkout
+
+  const siblingDir = repoWithDroppedObservation(); // a DIFFERENT repo, with its own bad merge
+  const ghbin = stubGhAlwaysGreen();
+
+  const cmd = `cd ${siblingDir} && gh pr merge 12 --repo The-Doxa-Way/some-other-repo --squash`;
+  const result = runGate(siblingDir, cmd, ghbin, projectDir);
+  assert.strictEqual(result.status, 0, 'a sibling repo landing must never be blocked by the sibling\'s own merge history');
+
+  fs.rmSync(projectDir, { recursive: true, force: true });
+  fs.rmSync(siblingDir, { recursive: true, force: true });
   fs.rmSync(ghbin, { recursive: true, force: true });
 });

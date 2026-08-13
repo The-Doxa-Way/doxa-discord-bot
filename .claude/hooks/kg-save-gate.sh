@@ -116,6 +116,26 @@ fi
 cd "$dir" 2>/dev/null || exit 0
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 
+# Only gate the doxa-discord-bot repo itself; allow landings on other repos.
+# Compare via --git-common-dir (resolves the MAIN checkout's .git dir for any
+# linked worktree of the same repo), NOT --show-toplevel. Runs BEFORE the
+# merge-integrity block below (review 2026-08-13, catching a real regression
+# in this port's first draft): the first draft ran the integrity check
+# before this bail, so a Bash landing command that `cd`'d or `git -C`'d into
+# a SIBLING repo — one that also happens to carry
+# scripts/check-kg-merge-integrity.cjs, since this feature is meant to land
+# fleet-wide — could get wrongly blocked by that sibling's OWN merge history,
+# violating this hook's very next comment ("must never block a sibling
+# repo's push"). Reproduced directly against the first-draft ordering before
+# being fixed.
+repo_common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || exit 0
+proj_common="$(cd "${CLAUDE_PROJECT_DIR:-$PWD}" 2>/dev/null && git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+[ -n "$proj_common" ] && [ "$repo_common" != "$proj_common" ] && exit 0
+
+# Base this chunk diverged from. No origin/main ref -> can't reason -> allow.
+base="$(git merge-base HEAD origin/main 2>/dev/null)" || exit 0
+[ -n "$base" ] || exit 0
+
 # ---------------------------------------------------------------------------
 # Merge-integrity check (ported from doxa-cns 2026-08-13, Garth: "standing
 # doctrine and practice across all repos"). Real incident: a merge conflict
@@ -124,48 +144,48 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 # an append log, and a naive "pick a side" resolution can only ever keep a
 # subset.
 #
-# Runs HERE, immediately after cwd/work-tree resolution and before every
-# other exit path below (the repo_common bail, the base/range checks, the
-# generated-surface check, the already-KG-changed check, the worktree pass)
-# — doxa-cns's own copy of this block was originally placed AFTER its
-# `gh pr merge`-specific KG-Guard-verdict fast path, which can exit 0 on a
-# GREEN CI verdict without ever reaching a check placed later; a review there
-# caught it and moved the block earlier. This repo's Bash-cmd path has no
-# such KG-Guard-verdict fast path today, but the check is placed at the
-# earliest safe point regardless, so a future fast path added here can never
-# silently outrun it again. This inspects the LOCAL git range
-# (merge-base(origin/main, HEAD)..HEAD) regardless of which landing command
-# follows — it protects any session that resolved a conflict in this
+# Runs HERE — after the repo-scoping bail above (so it can never fire against
+# a sibling repo) but before every remaining exit path below (the empty-range
+# check, the generated-surface check, the already-KG-changed check, the
+# worktree pass). This repo's Bash-cmd path has no `gh pr merge`-specific
+# KG-Guard-verdict fast path today (unlike doxa-cns's own copy of this block,
+# whose earlier placement after such a fast path made the check unreachable
+# on doxa-cns's most common landing shape until a review moved it) — placed
+# at this earliest-safe-after-repo-scoping point regardless, so a future fast
+# path added here can never silently outrun it. This inspects the LOCAL git
+# range (merge-base(origin/main, HEAD)..HEAD) regardless of which landing
+# command follows — it protects any session that resolved a conflict in this
 # checkout, whether it then lands via `gh pr merge`, `git push`, or `gh pr
-# create`. A merge landed with no local involvement (GitHub UI, the MCP merge
-# path above, a bot with no checkout) has nothing local to check and is out
-# of this hook's reach by construction.
+# create`.
 #
-# Fail-open on any tooling trouble (script missing, node missing, no
-# origin/main, empty range) — this block must never itself become the reason
-# a legitimate landing is blocked.
-if command -v node >/dev/null 2>&1 && [ -f "$dir/scripts/check-kg-merge-integrity.cjs" ]; then
-  integrity_base="$(git merge-base HEAD origin/main 2>/dev/null)"
-  if [ -n "$integrity_base" ] && [ "$integrity_base" != "$(git rev-parse HEAD 2>/dev/null)" ]; then
-    integrity_output="$(node "$dir/scripts/check-kg-merge-integrity.cjs" "$integrity_base" HEAD 2>&1)"
-    integrity_status=$?
-    if [ "$integrity_status" -eq 1 ]; then
-      printf '%s\n' "$integrity_output" >&2
-      exit 2
-    fi
+# KNOWN GAP (review 2026-08-13, not fixed here — real but out of this port's
+# scope, and inherited from doxa-cns's identical gap in its own source): a
+# merge landed via the mcp__github__merge_pull_request branch ABOVE never
+# reaches this block — that branch resolves everything through `gh pr diff`
+# against GitHub's remote state and exits before the Bash-cmd `cd "$dir"`
+# line runs, so a conflict resolved locally (creating a bad merge commit)
+# and then landed via the MCP tool instead of `gh pr merge` is NOT caught.
+# There is no CI backstop for this either — .github/workflows/kg-guard.yml
+# only checks for a .knowledge-graph/ file change, not merge integrity — so,
+# unlike the comment doxa-cns carries claiming CI covers this gap, that claim
+# does not hold here (nor, on inspection, does it actually hold in doxa-cns
+# either). Also out of scope: a conflict resolved via `git rebase` (rather
+# than `git merge`) never creates a 2-parent merge commit, so
+# check-kg-merge-integrity.cjs's `git rev-list --merges` scan finds nothing
+# to inspect — this matches the detector's documented scope, ported as-is
+# from doxa-cns rather than redesigned here.
+#
+# Fail-open on any tooling trouble (script missing, node missing, empty
+# range) — this block must never itself become the reason a legitimate
+# landing is blocked.
+if command -v node >/dev/null 2>&1 && [ -f "$dir/scripts/check-kg-merge-integrity.cjs" ] && [ "$base" != "$(git rev-parse HEAD 2>/dev/null)" ]; then
+  integrity_output="$(node "$dir/scripts/check-kg-merge-integrity.cjs" "$base" HEAD 2>&1)"
+  integrity_status=$?
+  if [ "$integrity_status" -eq 1 ]; then
+    printf '%s\n' "$integrity_output" >&2
+    exit 2
   fi
 fi
-
-# Only gate the doxa-discord-bot repo itself; allow landings on other repos.
-# Compare via --git-common-dir (resolves the MAIN checkout's .git dir for any
-# linked worktree of the same repo), NOT --show-toplevel.
-repo_common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || exit 0
-proj_common="$(cd "${CLAUDE_PROJECT_DIR:-$PWD}" 2>/dev/null && git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
-[ -n "$proj_common" ] && [ "$repo_common" != "$proj_common" ] && exit 0
-
-# Base this chunk diverged from. No origin/main ref -> can't reason -> allow.
-base="$(git merge-base HEAD origin/main 2>/dev/null)" || exit 0
-[ -n "$base" ] || exit 0
 
 # Empty range (HEAD at or behind origin/main) -> nothing is landing -> allow.
 [ "$base" = "$(git rev-parse HEAD 2>/dev/null)" ] && exit 0

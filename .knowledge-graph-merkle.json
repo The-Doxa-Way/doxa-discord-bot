@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "a0facdfc88998f3619a408e86f6e796d3b30b2b7ba398fe12d708fe5df434ffc",
+  "merkleRoot": "39feb8622c60871c6d9461026621a8607af37d85b0176bdc9b28799227e24e0f",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -35,25 +35,43 @@
       "timestamp": "2026-08-11T16:56:06.840Z"
     },
     {
-      "hash": "1774b88b68595d9c55bce1e7b6eed5468f957784d46d1cb8e438d60ae11a366f",
+      "hash": "bb27aa4ac4c6e277740a32b945f7ac69eed1a7d73047d460e5495c0dc7d8d184",
       "entityName": "KgMergeIntegrityGuard",
       "content": "Ported from doxa-cns (feat/kg-merge-resolve, commit d22d75d36): mergeResolve() CLI command in knowledge-graph-merkle.cjs unions both sides of a .knowledge-graph-merkle.json conflict by observation hash instead of picking one (the observations array is an append log; checkout --ours/--theirs always drops data). check-kg-merge-integrity.cjs is the mechanical detector wired into .claude/hooks/kg-save-gate.sh, placed right after cwd/work-tree resolution and before every other exit path: for any merge commit in the landing range, if the result is missing an observation hash present in a parent, the landing is blocked and the specific dropped entity is named. Covered by scripts/merge-resolve.test.cjs and scripts/kg-save-gate-merge-integrity.test.cjs (8 tests, all passing).",
       "provenance": {
         "sourceFile": ".claude/hooks/kg-save-gate.sh",
         "lineNumber": 248,
         "lineRange": null,
-        "fileHash": "3b776e5b1bef2352e49e7f2ff581635f14b07d22fdbfb470a67fbde694fb4001",
-        "totalLines": 220,
+        "fileHash": "2ba046c2465aef09d806a66553b25b25a60f3958b13df5e4b9764b4eb89ab832",
+        "totalLines": 240,
         "extractedAt": "2026-08-13T11:00:30.415Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Fix",
+        "rehashedAt": "2026-08-13T11:21:14.412Z"
+      },
+      "timestamp": "2026-08-13T11:00:30.423Z"
+    },
+    {
+      "hash": "cbaccf477c6ac4e29a5d0b846fc446c89f7edc1f3204c1af3f1ccf36d9ac2f24",
+      "entityName": "KgMergeIntegrityGuard",
+      "content": "Independent review (two agents, 2026-08-13) on PR #2 found and this port fixed: (1) HIGH — the merge-integrity block ran BEFORE the repo_common/proj_common scoping check, so a landing command cd'ing into a sibling repo could be wrongly blocked by that sibling's own merge history; reordered so repo-scoping bails first, pinned with a regression test that fails against the pre-fix ordering. (2) LOW — 5 pre-existing inline sha256(JSON.stringify(...)) call sites were left divergent from the new computeObservationHash() despite this file's own comment warning that divergence is exactly how a prior corruption happened; converted all 5 to call the shared function. (3) LOW — mergeResolve() dropped state.createdAt; now preserved from either side. Known, documented (not fixed, inherited from doxa-cns's identical gap and out of this port's scope): MCP-tool merges never reach the local-range check at all, and a conflict resolved via rebase (no 2-parent merge commit) is outside the detector's scan scope.",
+      "provenance": {
+        "sourceFile": ".claude/hooks/kg-save-gate.sh",
+        "lineNumber": 127,
+        "lineRange": null,
+        "fileHash": "2ba046c2465aef09d806a66553b25b25a60f3958b13df5e4b9764b4eb89ab832",
+        "totalLines": 240,
+        "extractedAt": "2026-08-13T11:21:05.286Z",
         "verificationStatus": "verified",
         "extractedBy": "knowledge-graph-merkle.cjs",
         "entityType": "Fix"
       },
-      "timestamp": "2026-08-13T11:00:30.423Z"
+      "timestamp": "2026-08-13T11:21:05.287Z"
     }
   ],
-  "lastVerified": "2026-08-13T11:00:33.341Z",
+  "lastVerified": "2026-08-13T11:21:14.457Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-08-13T11:00:33.342Z"
+  "lastModified": "2026-08-13T11:21:14.458Z"
 }

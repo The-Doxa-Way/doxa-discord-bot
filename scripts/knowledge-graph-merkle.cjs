@@ -51,10 +51,13 @@ function sha256(content) {
  * review there: every signer and verifier must use the SAME function, in
  * the SAME key order — a divergent inline copy is exactly how a prior
  * typed-add corruption happened). mergeResolve() below needs this shared
- * shape to recompute + compare hashes across two merkle-state files; this
- * repo's other call sites still inline the equivalent
- * `sha256(JSON.stringify({...}))` and are left untouched here (surgical
- * port — not a refactor of unrelated code).
+ * shape to recompute + compare hashes across two merkle-state files. Every
+ * pre-existing call site that inlined the equivalent
+ * `sha256(JSON.stringify({...}))` (createVerifiedObservation,
+ * verifyKnowledgeGraph, the entityType-backfill in add(), rehash x2) was
+ * converted to call this instead (review 2026-08-13: leaving them as
+ * divergent inline copies alongside this comment's own warning was exactly
+ * the anti-pattern being warned about).
  */
 function computeObservationHash(obs) {
   return sha256(JSON.stringify({
@@ -323,7 +326,7 @@ function createVerifiedObservation(entityName, observationContent, sourceFile, l
   };
 
   // Hash the observation
-  const observationHash = sha256(JSON.stringify(observationRecord));
+  const observationHash = computeObservationHash(observationRecord);
 
   // Add to state
   state.observations.push({
@@ -363,12 +366,7 @@ function verifyKnowledgeGraph() {
 
   for (const obs of state.observations) {
     // Verify observation hash
-    const recomputedHash = sha256(JSON.stringify({
-      entityName: obs.entityName,
-      content: obs.content,
-      provenance: obs.provenance,
-      timestamp: obs.timestamp
-    }));
+    const recomputedHash = computeObservationHash(obs);
 
     if (recomputedHash !== obs.hash) {
       results.violations.push({
@@ -628,12 +626,7 @@ function add(args) {
       lastObs.provenance.entityType = entityType;
       // entityType becomes part of the signed record — recompute obs.hash
       // and merkle root so verify still passes.
-      lastObs.hash = sha256(JSON.stringify({
-        entityName: lastObs.entityName,
-        content: lastObs.content,
-        provenance: lastObs.provenance,
-        timestamp: lastObs.timestamp,
-      }));
+      lastObs.hash = computeObservationHash(lastObs);
       state.merkleRoot = buildMerkleTree(state.observations.map((o) => o.hash));
       saveMerkleState(state);
     }
@@ -762,11 +755,16 @@ function mergeResolve(oursPath, theirsPath) {
   const onlyInOurs = merged.length - theirsCount;
   const onlyInTheirs = merged.length - oursCount;
 
+  // Preserve createdAt from either side (set once by `init()`) — this
+  // feature's whole premise is "nothing is ever dropped"; a merge-resolve
+  // silently discarding pre-existing state metadata would be a small
+  // instance of the exact anti-pattern it exists to prevent.
   const state = {
     merkleRoot: buildMerkleTree(merged.map((o) => o.hash)),
     observations: merged,
     lastVerified: null,
     version: 1,
+    ...(ours.createdAt || theirs.createdAt ? { createdAt: ours.createdAt || theirs.createdAt } : {}),
   };
   saveMerkleState(state);
 
@@ -900,12 +898,7 @@ function rehash() {
     const fullPath = path.join(PROJECT_ROOT, obs.provenance.sourceFile);
 
     if (!fs.existsSync(fullPath)) {
-      const storedHash = sha256(JSON.stringify({
-        entityName: obs.entityName,
-        content: obs.content,
-        provenance: obs.provenance,
-        timestamp: obs.timestamp,
-      }));
+      const storedHash = computeObservationHash(obs);
       if (storedHash !== obs.hash) {
         const oldHash = obs.hash?.substring(0, 12) || 'none';
         obs.hash = storedHash;
@@ -929,12 +922,7 @@ function rehash() {
       obs.provenance.rehashedAt = new Date().toISOString();
     }
 
-    const newObsHash = sha256(JSON.stringify({
-      entityName: obs.entityName,
-      content: obs.content,
-      provenance: obs.provenance,
-      timestamp: obs.timestamp,
-    }));
+    const newObsHash = computeObservationHash(obs);
 
     if (newObsHash !== obs.hash) {
       const oldHash = obs.hash?.substring(0, 12) || 'none';
