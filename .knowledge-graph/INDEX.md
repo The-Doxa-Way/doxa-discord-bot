@@ -4,6 +4,10 @@
 <!-- Lookup: Grep this file for your topic, then open the entity in graph.json. -->
 <!-- Never read graph.json whole for a lookup.   -->
 
+## Fix (1)
+
+- KgMergeIntegrityGuard — Ported from doxa-cns (feat/kg-merge-resolve, commit d22d75d36): mergeResolve() CLI command in knowledge-graph…
+
 ## Workflow (1)
 
 - LandingGatesInfra — Bootstrapped Doxa landing-gates infra (kg-guard CI, claude-code-review workflow, kg-save/review/test PreToolU…

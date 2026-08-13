@@ -7,6 +7,13 @@
         "Bootstrapped Doxa landing-gates infra (kg-guard CI, claude-code-review workflow, kg-save/review/test PreToolUse hooks, attest-review + knowledge-graph-merkle CommonJS scripts) ported from openclaw, adapted for this repo's ESM package.json (.cjs script names) and TS/discord.js/supabase stack.",
         "Second observation to confirm append path still works after saveGraph refactor."
       ]
+    },
+    {
+      "name": "KgMergeIntegrityGuard",
+      "entityType": "Fix",
+      "observations": [
+        "Ported from doxa-cns (feat/kg-merge-resolve, commit d22d75d36): mergeResolve() CLI command in knowledge-graph-merkle.cjs unions both sides of a .knowledge-graph-merkle.json conflict by observation hash instead of picking one (the observations array is an append log; checkout --ours/--theirs always drops data). check-kg-merge-integrity.cjs is the mechanical detector wired into .claude/hooks/kg-save-gate.sh, placed right after cwd/work-tree resolution and before every other exit path: for any merge commit in the landing range, if the result is missing an observation hash present in a parent, the landing is blocked and the specific dropped entity is named. Covered by scripts/merge-resolve.test.cjs and scripts/kg-save-gate-merge-integrity.test.cjs (8 tests, all passing)."
+      ]
     }
   ],
   "relations": []
