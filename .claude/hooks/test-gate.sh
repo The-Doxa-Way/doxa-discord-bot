@@ -25,6 +25,13 @@
 #
 # Exit codes: 0 = allow, 2 = block (stderr shown to the model).
 
+# gh repo view takes OWNER/REPO, never a path — `gh repo view "$dir"` is an
+# argument error that always fails, which silently disabled the PR-file-list
+# lookups this gate depends on. Resolve the slug from the checkout's remote.
+repo_slug_of() {
+  git -C "$1" remote get-url origin 2>/dev/null     | sed -E 's#^git@[^:]+:##; s#^https?://[^/]+/##; s#\.git$##'
+}
+
 payload="$(cat 2>/dev/null)" || exit 0
 [ -n "$payload" ] || exit 0
 command -v jq >/dev/null 2>&1 || exit 0
@@ -83,7 +90,7 @@ elif [ -n "$cmd" ]; then
   # head SHA the same way the MCP branch above does.
   cmd_pr="$(printf '%s' "$cmd" | grep -oE 'pr[[:space:]]+merge[[:space:]]+[0-9]+' | grep -oE '[0-9]+$' | head -1)"
   if [ -n "$cmd_pr" ] && command -v gh >/dev/null 2>&1; then
-    cmd_pr_repo="${flag_repo:-$(gh repo view "$dir" --json nameWithOwner -q .nameWithOwner 2>/dev/null)}"
+    cmd_pr_repo="${flag_repo:-20 20 12 61 79 80 81 98 701 33 100 204 250 395 398 399 400repo_slug_of "")}"
     if [ -n "$cmd_pr_repo" ]; then
       remote_head_sha="$(gh pr view "$cmd_pr" --repo "$cmd_pr_repo" --json headRefOid -q .headRefOid 2>/dev/null)"
       remote_changed="$(gh pr diff "$cmd_pr" --repo "$cmd_pr_repo" --name-only 2>/dev/null)"
@@ -98,8 +105,14 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || exit 0
 ledger="$common/review-attest.jsonl"
 
-test_re='^(src/.+\.test\.(ts|js)|tests/.+)$'
-code_re='^src/.+\.(ts|js)$'
+# This repo's real layout, checked against `git ls-files` (2026-08-15): sources
+# are src/**.ts, and the only tests that exist are scripts/*.test.cjs. The
+# ported patterns named a tests/ directory that has never existed here and a
+# colocated src/**.test.ts that has never been written, so test_re matched
+# NOTHING — a gate whose test pattern matches nothing can never block, which is
+# how it sat green while gating nothing. Keep these in step with the repo.
+test_re='^(scripts/.+\.test\.(cjs|mjs|js|ts)|src/.+\.test\.(ts|js)|tests?/.+)$'
+code_re='^(src|scripts)/.+\.(ts|js|cjs|mjs)$'
 
 # Evaluate HEAD plus every worktree tip; the merge could land any of them.
 tips="$(git rev-parse HEAD 2>/dev/null)

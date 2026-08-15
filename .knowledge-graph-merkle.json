@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "f8684c71cad8b633828b3c06fc9701df91050260ce34033be59d7ff1d7cdd5ee",
+  "merkleRoot": "c68454d90866cfddcc95fb3cac6a80d09a888e1266fce3b5477ba98dea806561",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -85,10 +85,44 @@
         "entityType": "Decision"
       },
       "timestamp": "2026-08-15T20:43:28.595Z"
+    },
+    {
+      "hash": "1facb22c562a5f850b77df7b26063aeb1bf681999c8540bad22951d6231c2017",
+      "entityName": "GatesThatCannotFire20260815",
+      "content": "Applied the doxa-browser-extension gate fixes to this repo, which the kit was copied from. (1) 'gh repo view $dir' is an argument error -- gh takes OWNER/REPO, never a filesystem path -- so it always failed and silently disabled the PR-file-list lookups review-gate.sh and test-gate.sh depend on; replaced with repo_slug_of(), which reads the slug from the checkout's origin remote. (2) review-gate.sh OR'd the PR's real head SHA into the local worktree tips, and the loop passes if ANY candidate is attested, so the extra candidate could only ever make the gate MORE permissive -- verified admitting a 'gh pr merge N' on the strength of an unrelated attested local tip. The remote head is now the ONLY candidate when it resolves, with local tips as the offline fallback. (3) where kg-save-gate.sh guarded a check-kg-merge-integrity path whose extension did not match the file this repo ships, the [ -f ] test was permanently false and the PR #343 data-loss guard never ran. All three are the same class: a gate that reports without gating, silently. scripts/check-gate-health.mjs in openclaw is the mechanical detector for the class.",
+      "provenance": {
+        "sourceFile": ".claude/hooks/kg-save-gate.sh",
+        "lineNumber": null,
+        "lineRange": null,
+        "fileHash": "2ba046c2465aef09d806a66553b25b25a60f3958b13df5e4b9764b4eb89ab832",
+        "totalLines": 240,
+        "extractedAt": "2026-08-15T21:56:18.836Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Decision"
+      },
+      "timestamp": "2026-08-15T21:56:18.837Z"
+    },
+    {
+      "hash": "277f176cb74d6e1ecb24f4da8ca9795289b7e14754d2685f6a37669aa30d6b06",
+      "entityName": "GatesThatCannotFire20260815",
+      "content": "Fourth defect, found by the new medic (openclaw scripts/check-gate-health.mjs) and NOT by the manual pass that fixed the other three: test-gate.sh's test_re was '^(src/.+\\\\.test\\\\.(ts|js)|tests/.+)$' in a repo whose only tests are scripts/*.test.cjs and which has no tests/ directory and no colocated src tests. The pattern matched NOTHING against git ls-files, so the gate could never block -- it sat green while gating nothing, for as long as it has existed. Retargeted to the real layout (test_re covers scripts/*.test.cjs; code_re widened from ^src/ to ^(src|scripts)/ so the KG tooling this repo ships is itself gated). Generalisable lesson: a ported gate's PATTERNS are repo-specific state, and copying a kit without re-deriving them against the destination's actual file list produces a gate that is present, wired, executable and completely inert. PATTERN_MATCHES_NOTHING in the medic is the mechanical check for it.",
+      "provenance": {
+        "sourceFile": ".claude/hooks/test-gate.sh",
+        "lineNumber": null,
+        "lineRange": null,
+        "fileHash": "a451e107ff0189261580b625c29f65933e0248e4e028531adb0e86e948c80dee",
+        "totalLines": 167,
+        "extractedAt": "2026-08-15T21:58:22.053Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Decision"
+      },
+      "timestamp": "2026-08-15T21:58:22.054Z"
     }
   ],
   "lastVerified": "2026-08-13T11:21:14.457Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-08-15T20:43:28.604Z"
+  "lastModified": "2026-08-15T21:58:22.064Z"
 }
