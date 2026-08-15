@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "23ef9cc71e6dd81374d9c4bd2f47c3541f1fb3260aee89a57f2eb14e67ef6594",
+  "merkleRoot": "c68454d90866cfddcc95fb3cac6a80d09a888e1266fce3b5477ba98dea806561",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -102,10 +102,27 @@
         "entityType": "Decision"
       },
       "timestamp": "2026-08-15T21:56:18.837Z"
+    },
+    {
+      "hash": "277f176cb74d6e1ecb24f4da8ca9795289b7e14754d2685f6a37669aa30d6b06",
+      "entityName": "GatesThatCannotFire20260815",
+      "content": "Fourth defect, found by the new medic (openclaw scripts/check-gate-health.mjs) and NOT by the manual pass that fixed the other three: test-gate.sh's test_re was '^(src/.+\\\\.test\\\\.(ts|js)|tests/.+)$' in a repo whose only tests are scripts/*.test.cjs and which has no tests/ directory and no colocated src tests. The pattern matched NOTHING against git ls-files, so the gate could never block -- it sat green while gating nothing, for as long as it has existed. Retargeted to the real layout (test_re covers scripts/*.test.cjs; code_re widened from ^src/ to ^(src|scripts)/ so the KG tooling this repo ships is itself gated). Generalisable lesson: a ported gate's PATTERNS are repo-specific state, and copying a kit without re-deriving them against the destination's actual file list produces a gate that is present, wired, executable and completely inert. PATTERN_MATCHES_NOTHING in the medic is the mechanical check for it.",
+      "provenance": {
+        "sourceFile": ".claude/hooks/test-gate.sh",
+        "lineNumber": null,
+        "lineRange": null,
+        "fileHash": "a451e107ff0189261580b625c29f65933e0248e4e028531adb0e86e948c80dee",
+        "totalLines": 167,
+        "extractedAt": "2026-08-15T21:58:22.053Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Decision"
+      },
+      "timestamp": "2026-08-15T21:58:22.054Z"
     }
   ],
   "lastVerified": "2026-08-13T11:21:14.457Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-08-15T21:56:18.848Z"
+  "lastModified": "2026-08-15T21:58:22.064Z"
 }

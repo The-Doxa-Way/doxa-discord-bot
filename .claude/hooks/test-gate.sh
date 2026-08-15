@@ -105,8 +105,14 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || exit 0
 ledger="$common/review-attest.jsonl"
 
-test_re='^(src/.+\.test\.(ts|js)|tests/.+)$'
-code_re='^src/.+\.(ts|js)$'
+# This repo's real layout, checked against `git ls-files` (2026-08-15): sources
+# are src/**.ts, and the only tests that exist are scripts/*.test.cjs. The
+# ported patterns named a tests/ directory that has never existed here and a
+# colocated src/**.test.ts that has never been written, so test_re matched
+# NOTHING — a gate whose test pattern matches nothing can never block, which is
+# how it sat green while gating nothing. Keep these in step with the repo.
+test_re='^(scripts/.+\.test\.(cjs|mjs|js|ts)|src/.+\.test\.(ts|js)|tests?/.+)$'
+code_re='^(src|scripts)/.+\.(ts|js|cjs|mjs)$'
 
 # Evaluate HEAD plus every worktree tip; the merge could land any of them.
 tips="$(git rev-parse HEAD 2>/dev/null)
