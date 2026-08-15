@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "39feb8622c60871c6d9461026621a8607af37d85b0176bdc9b28799227e24e0f",
+  "merkleRoot": "f8684c71cad8b633828b3c06fc9701df91050260ce34033be59d7ff1d7cdd5ee",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -68,10 +68,27 @@
         "entityType": "Fix"
       },
       "timestamp": "2026-08-13T11:21:05.287Z"
+    },
+    {
+      "hash": "1ab84dcd3c5770bb6f12e86b4e3c45abc5949694eecaebb68b1fd16d60c9dffc",
+      "entityName": "KgGuardRequiredCheckNaming",
+      "content": "The kg-guard job now carries an explicit 'name: KG Guard'. Without it the job reports its check-run under the bare job id 'check' — which is what a branch ruleset's required-status-check has to match on, so requiring it was both ambiguous (any other workflow with a job id 'check' collides) and unreadable in the PR checks list. Prerequisite for the 2026-08-15 fleet-wide enforcement pass: KG Guard ran on PRs in every repo but was a REQUIRED check in none of them, so the banking doctrine rested entirely on the merger choosing to wait for green — the local .claude/hooks/kg-save-gate.sh only binds Claude sessions in that checkout, and web-UI merges bypass everything.",
+      "provenance": {
+        "sourceFile": ".github/workflows/kg-guard.yml",
+        "lineNumber": null,
+        "lineRange": null,
+        "fileHash": "f49adc4342d5f5ae4491866d302baffa40b3035a1bb2a7648014d4fc3d04b108",
+        "totalLines": 68,
+        "extractedAt": "2026-08-15T20:43:28.594Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Decision"
+      },
+      "timestamp": "2026-08-15T20:43:28.595Z"
     }
   ],
   "lastVerified": "2026-08-13T11:21:14.457Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-08-13T11:21:14.458Z"
+  "lastModified": "2026-08-15T20:43:28.604Z"
 }
