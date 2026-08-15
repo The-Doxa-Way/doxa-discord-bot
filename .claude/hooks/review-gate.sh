@@ -28,6 +28,13 @@
 #
 # Exit codes: 0 = allow, 2 = block (stderr shown to the model).
 
+# gh repo view takes OWNER/REPO, never a path — `gh repo view "$dir"` is an
+# argument error that always fails, which silently disabled the PR-file-list
+# lookups this gate depends on. Resolve the slug from the checkout's remote.
+repo_slug_of() {
+  git -C "$1" remote get-url origin 2>/dev/null     | sed -E 's#^git@[^:]+:##; s#^https?://[^/]+/##; s#\.git$##'
+}
+
 payload="$(cat 2>/dev/null)" || exit 0
 [ -n "$payload" ] || exit 0
 command -v jq >/dev/null 2>&1 || exit 0
@@ -91,7 +98,7 @@ elif [ -n "$cmd" ]; then
     if [ -n "$flag_repo" ]; then
       remote_head_sha="$(gh pr view "$cmd_pr" --repo "$flag_repo" --json headRefOid -q .headRefOid 2>/dev/null)"
     else
-      remote_head_sha="$(gh pr view "$cmd_pr" --repo "$(gh repo view "$dir" --json nameWithOwner -q .nameWithOwner 2>/dev/null)" --json headRefOid -q .headRefOid 2>/dev/null)"
+      remote_head_sha="$(gh pr view "$cmd_pr" --repo "20 20 12 61 79 80 81 98 701 33 100 204 250 395 398 399 400repo_slug_of "")" --json headRefOid -q .headRefOid 2>/dev/null)"
     fi
   fi
 else
@@ -105,9 +112,18 @@ ledger="$common/review-attest.jsonl"
 
 # Candidate SHAs the merge could be landing: HEAD, every worktree tip, and
 # (when resolvable) the PR's actual remote head SHA.
-tips="$(git rev-parse HEAD 2>/dev/null)
-$(git worktree list --porcelain 2>/dev/null | sed -n 's/^HEAD //p')
-$remote_head_sha"
+# When the PR's real remote head resolves it is the ONLY candidate. OR-ing it
+# into the local tips could only ever make this gate MORE permissive — the loop
+# below passes if ANY candidate is attested, so a session that attested its own
+# branch could land an unrelated, never-reviewed PR by number. Fall back to
+# local tips only when the head cannot be resolved (offline / no gh), since
+# fail-open is the documented posture for a hook that cannot see.
+if [ -n "$remote_head_sha" ]; then
+  tips="$remote_head_sha"
+else
+  tips="$(git rev-parse HEAD 2>/dev/null)
+$(git worktree list --porcelain 2>/dev/null | sed -n 's/^HEAD //p')"
+fi
 
 if [ -f "$ledger" ]; then
   while IFS= read -r sha; do
