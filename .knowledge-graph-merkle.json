@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "08aef587e9b41610212853993720128179637fa42a1326090cc7e28c528b743b",
+  "merkleRoot": "959afecb16a9cad7abc73f47f0d9298f6f33c0fb0ccc075d61342d795eba740b",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -170,10 +170,27 @@
         "entityType": "Policy"
       },
       "timestamp": "2026-09-02T17:33:12.668Z"
+    },
+    {
+      "hash": "72e52eafc14f1c151f293888189dfa51b851dc3021e293b1a6c074e22a8ca173",
+      "entityName": "ReviewGateRepoSlugCorruption",
+      "content": "review-gate.sh line 101 carried a botched edit: --repo \"20 20 12 61 79 80 81 98 701 33 100 204 250 395 398 399 400repo_slug_of \"\")\" instead of --repo \"$(repo_slug_of \"$dir\")\". repo_slug_of was defined and never actually called, so for a bare 'gh pr merge <n>' (no --repo flag) the gh lookup always failed, remote_head_sha stayed empty, and the gate fell back to LOCAL worktree tips — silently reopening the exact hole the surrounding comment says it closes: a merge of PR #N passing on the strength of an unrelated attested SHA sitting in some other local worktree. Found 2026-09-02 while proving the stale chore/add-landing-gates branch was superseded. Verified after repair: repo_slug_of resolves The-Doxa-Way/doxa-discord-bot and gh pr view returns a real head SHA.",
+      "provenance": {
+        "sourceFile": ".claude/hooks/review-gate.sh",
+        "lineNumber": null,
+        "lineRange": null,
+        "fileHash": "446df67246aebf83eb12d5a08c528c8df3b00030978ed13746195ff755b56555",
+        "totalLines": 151,
+        "extractedAt": "2026-09-02T18:08:18.850Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Bug"
+      },
+      "timestamp": "2026-09-02T18:08:18.852Z"
     }
   ],
   "lastVerified": "2026-08-13T11:21:14.457Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-09-02T17:33:12.682Z"
+  "lastModified": "2026-09-02T18:08:18.879Z"
 }
