@@ -223,12 +223,15 @@ client.on(Events.MessageCreate, async (message: Message) => {
   if (now - channelLast < CHANNEL_COOLDOWN_MS) return;
   channelCooldowns.set(message.channelId, now);
 
-  // Empty ping → friendly prompt to add what they're facing.
+  // Empty ping → prompt to add what they're facing. No first person: Doxa is not
+  // a person and never speaks as one (Garth 2026-09-02, on the earlier "Tell me
+  // what you are facing and I will encourage you" — "There is no me here").
+  // The example keeps the USER's voice, which is where "I" belongs.
   if (!situation) {
     try {
       await message.reply({
         content:
-          'Tell me what you are facing and I will encourage you — for example: ' +
+          'Add what you are facing — for example: ' +
           '`@DoxaBot I am anxious about a decision`',
         allowedMentions: { parse: [], repliedUser: false },
       });

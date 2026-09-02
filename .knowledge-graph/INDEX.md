@@ -17,6 +17,10 @@
 
 - KgMergeIntegrityGuard — Ported from doxa-cns (feat/kg-merge-resolve, commit d22d75d36): mergeResolve() CLI command in knowledge-graph…
 
+## Policy (1)
+
+- DoxaIsNotAPerson — Garth 2026-09-02, on the Discord mention prompt 'Tell me what you are facing and I will encourage you': 'I ha…
+
 ## Workflow (1)
 
 - LandingGatesInfra — Bootstrapped Doxa landing-gates infra (kg-guard CI, claude-code-review workflow, kg-save/review/test PreToolU…
