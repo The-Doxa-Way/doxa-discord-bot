@@ -98,7 +98,7 @@ elif [ -n "$cmd" ]; then
     if [ -n "$flag_repo" ]; then
       remote_head_sha="$(gh pr view "$cmd_pr" --repo "$flag_repo" --json headRefOid -q .headRefOid 2>/dev/null)"
     else
-      remote_head_sha="$(gh pr view "$cmd_pr" --repo "20 20 12 61 79 80 81 98 701 33 100 204 250 395 398 399 400repo_slug_of "")" --json headRefOid -q .headRefOid 2>/dev/null)"
+      remote_head_sha="$(gh pr view "$cmd_pr" --repo "$(repo_slug_of "$dir")" --json headRefOid -q .headRefOid 2>/dev/null)"
     fi
   fi
 else

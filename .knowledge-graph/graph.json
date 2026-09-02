@@ -45,6 +45,13 @@
       "observations": [
         "Garth 2026-09-02, on the Discord mention prompt 'Tell me what you are facing and I will encourage you': 'I hate tell me what you are facing. There is no me here. Doxa is not a person.' Doxa never speaks in the first person and never claims agency of its own — no 'I will', no 'me', no persona. An instruction is the right shape: 'Add what you are facing'. First person belongs to the USER, so an example of what a person types keeps its 'I' ('@DoxaBot I am anxious about a decision'). Applies to every surface: Discord, Telegram, MCP, app microcopy, empty states."
       ]
+    },
+    {
+      "name": "ReviewGateRepoSlugCorruption",
+      "entityType": "Bug",
+      "observations": [
+        "review-gate.sh line 101 carried a botched edit: --repo \"20 20 12 61 79 80 81 98 701 33 100 204 250 395 398 399 400repo_slug_of \"\")\" instead of --repo \"$(repo_slug_of \"$dir\")\". repo_slug_of was defined and never actually called, so for a bare 'gh pr merge <n>' (no --repo flag) the gh lookup always failed, remote_head_sha stayed empty, and the gate fell back to LOCAL worktree tips — silently reopening the exact hole the surrounding comment says it closes: a merge of PR #N passing on the strength of an unrelated attested SHA sitting in some other local worktree. Found 2026-09-02 while proving the stale chore/add-landing-gates branch was superseded. Verified after repair: repo_slug_of resolves The-Doxa-Way/doxa-discord-bot and gh pr view returns a real head SHA."
+      ]
     }
   ],
   "relations": []
