@@ -12,10 +12,18 @@
  * if ANTHROPIC_API_KEY is set, otherwise the free anon tier (50 calls/day per IP).
  */
 
-import { Client, Events, GatewayIntentBits, MessageFlags, type Interaction } from 'discord.js';
+import {
+  Client,
+  Events,
+  GatewayIntentBits,
+  MessageFlags,
+  PermissionsBitField,
+  type Interaction,
+  type Message,
+} from 'discord.js';
 import { DoxaClient, DoxaRateLimitError, DoxaError } from '@thedoxaway/mcp-client';
 
-import { encourageCommand, handleEncourage } from './commands/encourage.js';
+import { encourageCommand, handleEncourage, buildEncourageReply } from './commands/encourage.js';
 import { scriptureCommand, handleScripture } from './commands/scripture.js';
 import { doxawayCommand, handleDoxaway } from './commands/doxaway.js';
 import { weighCommand, handleWeigh } from './commands/weigh.js';
@@ -39,7 +47,14 @@ const doxa = new DoxaClient({
 });
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [
+    GatewayIntentBits.Guilds,
+    // Needed for the @mention forum-participation handler: GuildMessages fires
+    // MessageCreate, and MessageContent (PRIVILEGED — enable "Message Content
+    // Intent" in the Discord Developer Portal) populates message.content.
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 client.once(Events.ClientReady, async (c) => {
@@ -115,6 +130,147 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
       // Do NOT let this crash the process, which would cause a restart loop.
       console.error('[reply-failed]', replyErr instanceof Error ? replyErr.message : replyErr);
     }
+  }
+});
+
+// Throttles for the @mention handler. In-memory is fine for a single process;
+// back these with a shared store if the bot is ever sharded.
+//
+// The per-user cooldown alone is trivially bypassed with multiple accounts, so
+// the cost path (buildEncourageReply → MCP/Anthropic) is additionally guarded by
+// a per-channel cooldown, a process-wide token bucket, and a bounded in-flight
+// concurrency cap. All of these silently drop when exceeded — never announce a
+// throttle (that would itself be channel noise).
+const MENTION_COOLDOWN_MS = 10_000;
+const CHANNEL_COOLDOWN_MS = 5_000;
+const GLOBAL_MAX_PER_MINUTE = 30;
+const MAX_IN_FLIGHT = 4;
+
+const mentionCooldowns = new Map<string, number>();
+const channelCooldowns = new Map<string, number>();
+
+// Global token bucket: refills GLOBAL_MAX_PER_MINUTE tokens per minute, shared
+// across every user/guild/channel, so a coordinated raid can't multiply spend.
+let globalTokens = GLOBAL_MAX_PER_MINUTE;
+let lastRefill = Date.now();
+function takeGlobalToken(): boolean {
+  const now = Date.now();
+  const refill = Math.floor(((now - lastRefill) / 60_000) * GLOBAL_MAX_PER_MINUTE);
+  if (refill >= 1) {
+    globalTokens = Math.min(GLOBAL_MAX_PER_MINUTE, globalTokens + refill);
+    lastRefill = now;
+  }
+  if (globalTokens < 1) return false;
+  globalTokens -= 1;
+  return true;
+}
+
+// Bounded max-in-flight cap on concurrent MCP/Anthropic calls — drops bursts
+// rather than firing many provider requests at once (avoids 429s).
+let inFlight = 0;
+
+// Forum participation: mirror /encourage when the bot is @mentioned in a guild
+// channel. Slash commands stay the canonical entry point; this just lets people
+// ping DoxaBot conversationally and get the identical Doxa-voice reply.
+client.on(Events.MessageCreate, async (message: Message) => {
+  // Only handle guild text channels — the bot has no DM behaviour today.
+  if (!message.inGuild()) return;
+  // Ignore other bots, webhook posts, and our own messages (anti-loop).
+  if (message.author.bot) return;
+  if (message.webhookId) return;
+  if (!client.user || message.author.id === client.user.id) return;
+  // Never respond to @everyone / @here — they flip mentions.has(...) true but
+  // are not a real ping of the bot.
+  if (message.mentions.everyone) return;
+  // Require a DIRECT user-mention of the bot (role/reply pings don't count).
+  if (!message.mentions.users.has(client.user.id)) return;
+
+  // Strip every form of the bot mention (<@id> and legacy <@!id>) to get the
+  // user's situation text.
+  const mentionRegex = new RegExp(`<@!?${client.user.id}>`, 'g');
+  const situation = message.content.replace(mentionRegex, '').trim();
+
+  // Per-user cooldown to stop spam/abuse loops; silently drop if too soon. This
+  // runs BEFORE the empty-vs-situation branch so a bare `@DoxaBot` (which strips
+  // to empty) is rate-limited too and can't be used to flood the channel with
+  // the friendly-prompt reply.
+  const now = Date.now();
+  const last = mentionCooldowns.get(message.author.id) ?? 0;
+  if (now - last < MENTION_COOLDOWN_MS) return;
+  mentionCooldowns.set(message.author.id, now);
+
+  // Empty ping → friendly prompt to add what they're facing.
+  if (!situation) {
+    try {
+      await message.reply({
+        content:
+          'Tell me what you are facing and I will encourage you — for example: ' +
+          '`@DoxaBot I am anxious about a decision`',
+        allowedMentions: { parse: [], repliedUser: false },
+      });
+    } catch (err) {
+      console.error('[mention][reply-failed]', err instanceof Error ? err.message : err);
+    }
+    return;
+  }
+
+  // Bail silently if we lack permission to post here (never announce that we
+  // can't post — that would itself be noise / require posting).
+  const me = message.guild.members.me;
+  if (me && !message.channel.permissionsFor(me)?.has(PermissionsBitField.Flags.SendMessages)) {
+    return;
+  }
+
+  // Per-channel cooldown so a single channel can't be saturated by many users.
+  const channelLast = channelCooldowns.get(message.channelId) ?? 0;
+  if (now - channelLast < CHANNEL_COOLDOWN_MS) return;
+  channelCooldowns.set(message.channelId, now);
+
+  // Process-wide guards on the paid cost path: drop silently when the global
+  // rate is exhausted or too many calls are already in flight.
+  if (inFlight >= MAX_IN_FLIGHT) return;
+  if (!takeGlobalToken()) return;
+
+  inFlight++;
+  try {
+    const reply = await buildEncourageReply(
+      doxa,
+      `discord:${message.author.id}`,
+      situation,
+      undefined,
+      'mention',
+    );
+    // Lock `parse` to [] so AI/user-derived text can never trigger an
+    // @everyone/@here/role/user mass-ping (a single one is an instant ban).
+    await message.reply({ ...reply, allowedMentions: { parse: [], repliedUser: false } });
+  } catch (err) {
+    console.error('[mention]', err instanceof Error ? err.message : err);
+    try {
+      if (err instanceof DoxaRateLimitError) {
+        await message.reply({
+          content:
+            `Today's free encouragement is done (${err.quota.used}/${err.quota.limit} in 24h).\n` +
+            `For unlimited, install the Doxa app: <https://doxa.app/get?utm_source=discord&utm_medium=rate-limit>\n` +
+            `Or drop in your own Anthropic key: <${err.byolUrl}>`,
+          allowedMentions: { parse: [], repliedUser: false },
+        });
+      } else if (err instanceof DoxaError) {
+        await message.reply({
+          content: `Doxa MCP returned an error: ${err.message}`,
+          allowedMentions: { parse: [], repliedUser: false },
+        });
+      } else {
+        await message.reply({
+          content: 'Something went wrong. Please try again.',
+          allowedMentions: { parse: [], repliedUser: false },
+        });
+      }
+    } catch (replyErr) {
+      // Send failed (e.g. missing perms, code 50013/50001) — log, never throw.
+      console.error('[mention][reply-failed]', replyErr instanceof Error ? replyErr.message : replyErr);
+    }
+  } finally {
+    inFlight--;
   }
 });
 
