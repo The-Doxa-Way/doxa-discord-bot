@@ -1,5 +1,7 @@
 import {
   SlashCommandBuilder,
+  type ActionRowBuilder,
+  type ButtonBuilder,
   type ChatInputCommandInteraction,
 } from 'discord.js';
 import type { DoxaClient, DoxaWayMovementId } from '@thedoxaway/mcp-client';
@@ -36,16 +38,25 @@ export const encourageCommand = new SlashCommandBuilder()
       .addChoices(...MOVEMENT_CHOICES),
   );
 
-export async function handleEncourage(
-  interaction: ChatInputCommandInteraction,
+/**
+ * Build the Doxa-voice encouragement reply payload (content + components).
+ *
+ * Shared by the `/encourage` slash command and the @mention handler so the voice
+ * and formatting are identical across both surfaces. The reply shape (plain
+ * markdown `content` with masked scripture links + a single Doxa app button row)
+ * works the same on `interaction.editReply` and `message.reply`.
+ *
+ * @param callerId   Per-user caller id (`discord:<userId>`) for fair daily quota.
+ * @param utmMedium  UTM medium tag so installs are attributable to the surface.
+ */
+export async function buildEncourageReply(
   doxa: DoxaClient,
-): Promise<void> {
-  await interaction.deferReply();
-
-  const situation = interaction.options.getString('situation', true);
-  const movement = (interaction.options.getString('movement') ?? undefined) as DoxaWayMovementId | undefined;
-
-  const result = await doxa.withCaller(`discord:${interaction.user.id}`).encourage(situation, movement);
+  callerId: string,
+  situation: string,
+  movement: DoxaWayMovementId | undefined,
+  utmMedium: string,
+): Promise<{ content: string; components: ActionRowBuilder<ButtonBuilder>[] }> {
+  const result = await doxa.withCaller(callerId).encourage(situation, movement);
 
   const scriptureLines = result.scriptures.length
     ? '\n\n' +
@@ -56,8 +67,28 @@ export async function handleEncourage(
 
   const movementBadge = result.movement ? `_${result.movement}_\n\n` : '';
 
-  await interaction.editReply({
+  return {
     content: `${movementBadge}${result.text}${scriptureLines}`,
-    components: [doxaAppRow('encourage')],
-  });
+    components: [doxaAppRow(utmMedium)],
+  };
+}
+
+export async function handleEncourage(
+  interaction: ChatInputCommandInteraction,
+  doxa: DoxaClient,
+): Promise<void> {
+  await interaction.deferReply();
+
+  const situation = interaction.options.getString('situation', true);
+  const movement = (interaction.options.getString('movement') ?? undefined) as DoxaWayMovementId | undefined;
+
+  const reply = await buildEncourageReply(
+    doxa,
+    `discord:${interaction.user.id}`,
+    situation,
+    movement,
+    'encourage',
+  );
+
+  await interaction.editReply(reply);
 }
