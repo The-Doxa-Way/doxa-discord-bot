@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "a1519142c2ac9bc408a1337400ee60532dbb34180f5eacd7cbf0daa0c24b9705",
+  "merkleRoot": "08aef587e9b41610212853993720128179637fa42a1326090cc7e28c528b743b",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -153,10 +153,27 @@
         "entityType": "Feature"
       },
       "timestamp": "2026-09-02T17:11:25.331Z"
+    },
+    {
+      "hash": "395e92c8789155fa4d14c419241baeb77a26e33f39d06dadede4c6d67648def6",
+      "entityName": "DoxaIsNotAPerson",
+      "content": "Garth 2026-09-02, on the Discord mention prompt 'Tell me what you are facing and I will encourage you': 'I hate tell me what you are facing. There is no me here. Doxa is not a person.' Doxa never speaks in the first person and never claims agency of its own — no 'I will', no 'me', no persona. An instruction is the right shape: 'Add what you are facing'. First person belongs to the USER, so an example of what a person types keeps its 'I' ('@DoxaBot I am anxious about a decision'). Applies to every surface: Discord, Telegram, MCP, app microcopy, empty states.",
+      "provenance": {
+        "sourceFile": "src/index.ts",
+        "lineNumber": null,
+        "lineRange": null,
+        "fileHash": "0e9df272dd60543c53f686f4e9cb20e61be80fc8b698e2847758979ed14ff7dd",
+        "totalLines": 313,
+        "extractedAt": "2026-09-02T17:33:12.667Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Policy"
+      },
+      "timestamp": "2026-09-02T17:33:12.668Z"
     }
   ],
   "lastVerified": "2026-08-13T11:21:14.457Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-09-02T17:11:25.350Z"
+  "lastModified": "2026-09-02T17:33:12.682Z"
 }

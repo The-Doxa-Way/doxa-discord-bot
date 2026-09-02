@@ -38,6 +38,13 @@
         "The Discord bot answers @mentions with the same encouragement as /encourage: buildEncourageReply (src/commands/encourage.ts) is shared by both surfaces so the voice and reply shape are identical — plain markdown content with masked scripture links plus one Doxa app button row, which renders the same through interaction.editReply and message.reply. Each surface passes its own caller id (discord:<userId>, keeping the daily quota per-user) and its own UTM medium so installs stay attributable to the surface that earned them. Written 2026-06-26, left uncommitted in the working tree for two months, banked 2026-09-02 in a fleet-wide sweep.",
         "Independent review found two real defects before merge. (1) HIGH: the handler used message.mentions.users.has(botId), the RAW API list, which includes the replied-to author whenever Discord's 'ping author' reply toggle is on — on by default in every client. So replying to one of the bot's own messages with an unrelated follow-up fired a full paid encourage call on that text and spent the user's daily quota, despite the code comment claiming reply pings did not count. Now message.mentions.has(client.user, { ignoreRepliedUser: true, ignoreRoles: true, ignoreEveryone: true }). (2) MEDIUM: the free 'tell me what you are facing' reply sat ABOVE the per-channel cooldown and global token bucket, so N users each inside their own 10s window could flood a channel with canned replies at no budget cost; the channel cooldown and permission check now gate that branch too."
       ]
+    },
+    {
+      "name": "DoxaIsNotAPerson",
+      "entityType": "Policy",
+      "observations": [
+        "Garth 2026-09-02, on the Discord mention prompt 'Tell me what you are facing and I will encourage you': 'I hate tell me what you are facing. There is no me here. Doxa is not a person.' Doxa never speaks in the first person and never claims agency of its own — no 'I will', no 'me', no persona. An instruction is the right shape: 'Add what you are facing'. First person belongs to the USER, so an example of what a person types keeps its 'I' ('@DoxaBot I am anxious about a decision'). Applies to every surface: Discord, Telegram, MCP, app microcopy, empty states."
+      ]
     }
   ],
   "relations": []
