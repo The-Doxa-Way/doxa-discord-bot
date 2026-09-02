@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "dca945c30723b9d289ac17f8ecaf00864912a22cba6744b6df8c50e26f436c15",
+  "merkleRoot": "a1519142c2ac9bc408a1337400ee60532dbb34180f5eacd7cbf0daa0c24b9705",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -136,10 +136,27 @@
         "entityType": "Feature"
       },
       "timestamp": "2026-09-02T17:03:32.478Z"
+    },
+    {
+      "hash": "be8892ce409dfad7b4b2033b99444f5f4c525c59e8d9a911e1469ec3356b3918",
+      "entityName": "DiscordMentionEncouragement",
+      "content": "Independent review found two real defects before merge. (1) HIGH: the handler used message.mentions.users.has(botId), the RAW API list, which includes the replied-to author whenever Discord's 'ping author' reply toggle is on — on by default in every client. So replying to one of the bot's own messages with an unrelated follow-up fired a full paid encourage call on that text and spent the user's daily quota, despite the code comment claiming reply pings did not count. Now message.mentions.has(client.user, { ignoreRepliedUser: true, ignoreRoles: true, ignoreEveryone: true }). (2) MEDIUM: the free 'tell me what you are facing' reply sat ABOVE the per-channel cooldown and global token bucket, so N users each inside their own 10s window could flood a channel with canned replies at no budget cost; the channel cooldown and permission check now gate that branch too.",
+      "provenance": {
+        "sourceFile": "src/index.ts",
+        "lineNumber": null,
+        "lineRange": null,
+        "fileHash": "400e3e140dbeb43a39cd2db16f6c66a3be267220df123ee5b95d945f8647be1b",
+        "totalLines": 310,
+        "extractedAt": "2026-09-02T17:11:25.330Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Feature"
+      },
+      "timestamp": "2026-09-02T17:11:25.331Z"
     }
   ],
   "lastVerified": "2026-08-13T11:21:14.457Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-09-02T17:03:32.487Z"
+  "lastModified": "2026-09-02T17:11:25.350Z"
 }

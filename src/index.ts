@@ -182,8 +182,15 @@ client.on(Events.MessageCreate, async (message: Message) => {
   // Never respond to @everyone / @here — they flip mentions.has(...) true but
   // are not a real ping of the bot.
   if (message.mentions.everyone) return;
-  // Require a DIRECT user-mention of the bot (role/reply pings don't count).
-  if (!message.mentions.users.has(client.user.id)) return;
+  // Require a DIRECT user-mention of the bot. `mentions.users` is the RAW API
+  // list, which includes the replied-to author whenever Discord's "ping author"
+  // reply toggle is on — it is on by default in every client. Reading it
+  // directly meant that replying to one of the bot's own messages with an
+  // unrelated follow-up ("which translation is this?") fired a full paid
+  // encourage call on that text and spent the user's daily quota. mentions.has
+  // with ignoreRepliedUser is the documented way to exclude it; roles and
+  // everyone stay excluded too, so this really is a direct ping only.
+  if (!message.mentions.has(client.user, { ignoreRepliedUser: true, ignoreRoles: true, ignoreEveryone: true })) return;
 
   // Strip every form of the bot mention (<@id> and legacy <@!id>) to get the
   // user's situation text.
@@ -199,6 +206,23 @@ client.on(Events.MessageCreate, async (message: Message) => {
   if (now - last < MENTION_COOLDOWN_MS) return;
   mentionCooldowns.set(message.author.id, now);
 
+  // Bail silently if we lack permission to post here (never announce that we
+  // can't post — that would itself be noise / require posting).
+  const me = message.guild.members.me;
+  if (me && !message.channel.permissionsFor(me)?.has(PermissionsBitField.Flags.SendMessages)) {
+    return;
+  }
+
+  // Per-channel cooldown so a single channel can't be saturated by many users.
+  // This gates the FREE friendly-prompt reply below as well: without it, N users
+  // each pinging inside their own 10s per-user window could flood a channel with
+  // canned replies, which costs no budget but is exactly the spam this bot must
+  // never produce. Claiming the 5s slot here can delay a real request by at most
+  // that, which is the cheaper mistake.
+  const channelLast = channelCooldowns.get(message.channelId) ?? 0;
+  if (now - channelLast < CHANNEL_COOLDOWN_MS) return;
+  channelCooldowns.set(message.channelId, now);
+
   // Empty ping → friendly prompt to add what they're facing.
   if (!situation) {
     try {
@@ -213,18 +237,6 @@ client.on(Events.MessageCreate, async (message: Message) => {
     }
     return;
   }
-
-  // Bail silently if we lack permission to post here (never announce that we
-  // can't post — that would itself be noise / require posting).
-  const me = message.guild.members.me;
-  if (me && !message.channel.permissionsFor(me)?.has(PermissionsBitField.Flags.SendMessages)) {
-    return;
-  }
-
-  // Per-channel cooldown so a single channel can't be saturated by many users.
-  const channelLast = channelCooldowns.get(message.channelId) ?? 0;
-  if (now - channelLast < CHANNEL_COOLDOWN_MS) return;
-  channelCooldowns.set(message.channelId, now);
 
   // Process-wide guards on the paid cost path: drop silently when the global
   // rate is exhausted or too many calls are already in flight.
