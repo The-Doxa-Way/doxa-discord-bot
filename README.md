@@ -18,6 +18,13 @@ Encouragement for your whole journey. Scripture-anchored encouragement and Bible
 | `/doxaway [movement:<1-of-9>]` | Explore The Doxa Way, a 9-movement framework for walking with God |
 | `/weigh word:<text>` | Test a word, impression, or advice against Scripture (1 Thess 5:20-21) |
 | `/promise area:<text>` | A Scripture promise to stand on for an area of life (autocomplete suggests areas) |
+| `/privacy` | Withdraw consent and delete the messages Doxa stored from you |
+
+## Privacy and consent
+
+What you send DoxaBot can show your religious beliefs (special-category data under UK/EU GDPR Art. 9). Before `/encourage`, `/weigh`, `/promise`, `/scripture` or an @mention sends your text anywhere, DoxaBot shows a short notice with an **I agree** button. Until you press it, your text is not sent or stored. `/privacy` withdraws at any time and deletes the messages Doxa stored from you. Privacy policy: <https://doxa.app/privacy#special-category>
+
+Consent is stored in the Doxa database. The bot connects as the `discord_bot` Postgres role, which can only run three functions (status, grant, withdraw) and cannot read any table.
 
 ### Interactive Features
 
@@ -89,6 +96,7 @@ cp .env.example .env
 # Edit .env: fill in DISCORD_BOT_TOKEN + DISCORD_CLIENT_ID
 # Optional: DISCORD_GUILD_ID for instant dev-guild command updates
 # Optional: ANTHROPIC_API_KEY for BYOL mode (unlimited)
+# Required: DATABASE_URL for consent storage (the bot will not start without it)
 ```
 
 ### 4. Install and run
@@ -107,6 +115,8 @@ Commands self-register on boot. Global commands take up to 1 hour to propagate; 
 ```bash
 flyctl launch --no-deploy --copy-config --name doxa-discord-bot
 flyctl secrets set DISCORD_BOT_TOKEN="..." DISCORD_CLIENT_ID="..."
+# Doxa's own deploy: the discord_bot pooler URL lives in the macOS Keychain
+flyctl secrets set DATABASE_URL="$(security find-generic-password -s 'doxa-discord-bot DATABASE_URL' -w)" --stage
 flyctl deploy
 ```
 

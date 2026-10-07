@@ -52,6 +52,13 @@
       "observations": [
         "review-gate.sh line 101 carried a botched edit: --repo \"20 20 12 61 79 80 81 98 701 33 100 204 250 395 398 399 400repo_slug_of \"\")\" instead of --repo \"$(repo_slug_of \"$dir\")\". repo_slug_of was defined and never actually called, so for a bare 'gh pr merge <n>' (no --repo flag) the gh lookup always failed, remote_head_sha stayed empty, and the gate fell back to LOCAL worktree tips — silently reopening the exact hole the surrounding comment says it closes: a merge of PR #N passing on the strength of an unrelated attested SHA sitting in some other local worktree. Found 2026-09-02 while proving the stale chore/add-landing-gates branch was superseded. Verified after repair: repo_slug_of resolves The-Doxa-Way/doxa-discord-bot and gh pr view returns a real head SHA."
       ]
+    },
+    {
+      "name": "DiscordArt9Consent",
+      "entityType": "Feature",
+      "observations": [
+        "2026-10-07 GDPR Art. 9 consent gate: /encourage, /weigh, /promise, /scripture and @mentions forward free text to the Doxa MCP (which calls the AI provider and logs request_payload with caller_id discord:<id> in mcp_calls) only after the user presses the 'I agree' button (custom_id art9_consent:v1.0). /doxaway is not gated (no free text). /privacy withdraws and deletes that user's mcp_calls rows. The bot had no datastore and Doxa had no endpoint for it, so consent lives in doxa-app prod table bot_consents (platform discord) reached through the least-privilege Postgres LOGIN role discord_bot via the Supabase pooler (DATABASE_URL, postgres.js, prepare:false); the role can only EXECUTE discord_bot_consent_{status,grant,withdraw} and is denied every table, so no service-role key sits on Fly. DATABASE_URL is required at boot; the URL is in the macOS Keychain (service 'doxa-discord-bot DATABASE_URL'). Routing moved to src/dispatch.ts so tests (node --test via tsconfig.test.json, npm test) drive it with fakes. Store read errors fail closed."
+      ]
     }
   ],
   "relations": []
