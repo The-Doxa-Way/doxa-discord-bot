@@ -44,7 +44,8 @@
       "entityType": "Policy",
       "observations": [
         "Garth 2026-09-02, on the Discord mention prompt 'Tell me what you are facing and I will encourage you': 'I hate tell me what you are facing. There is no me here. Doxa is not a person.' Doxa never speaks in the first person and never claims agency of its own — no 'I will', no 'me', no persona. An instruction is the right shape: 'Add what you are facing'. First person belongs to the USER, so an example of what a person types keeps its 'I' ('@DoxaBot I am anxious about a decision'). Applies to every surface: Discord, Telegram, MCP, app microcopy, empty states.",
-        "2026-10-08: the Art. 9 consent notice (src/consent.ts) said 'what you send me' and 'our privacy policy' — first person for Doxa. Now 'Before you start: what you send here…' and 'the Doxa privacy policy'. src/dispatch.test.ts fails if any bot consent/withdraw/thanks/error string uses I/me/my/we/us/our (the user's 'I agree' button label excepted)."
+        "2026-10-08: the Art. 9 consent notice (src/consent.ts) said 'what you send me' and 'our privacy policy' — first person for Doxa. Now 'Before you start: what you send here…' and 'the Doxa privacy policy'. src/dispatch.test.ts fails if any bot consent/withdraw/thanks/error string uses I/me/my/we/us/our (the user's 'I agree' button label excepted).",
+        "2026-10-08 review round: final Discord consent notice reads 'Before you start: what you send to DoxaBot can show your religious beliefs' — naming the product (DoxaBot, Doxa) is the impersonal pattern, not 'here' (ambiguous in a channel) and never 'me/we/our'."
       ]
     },
     {

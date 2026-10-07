@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "75d799e6a2b0edd8743fc3b5e0b07ef2cd767b1bd92ea296e8ab15797c899af4",
+  "merkleRoot": "f553b999b864b2c7e06ae7b338b16539297f2a8556fa15f324f0cab5c1f335a9",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -221,10 +221,27 @@
         "entityType": "Policy"
       },
       "timestamp": "2026-10-07T23:06:01.094Z"
+    },
+    {
+      "hash": "ec599fe501c4e85d4c0543e2463f9e5524dc0719376e48e76fbfa525b1eb6055",
+      "entityName": "DoxaIsNotAPerson",
+      "content": "2026-10-08 review round: final Discord consent notice reads 'Before you start: what you send to DoxaBot can show your religious beliefs' — naming the product (DoxaBot, Doxa) is the impersonal pattern, not 'here' (ambiguous in a channel) and never 'me/we/our'.",
+      "provenance": {
+        "sourceFile": "src/consent.ts",
+        "lineNumber": 30,
+        "lineRange": null,
+        "fileHash": "1158aa4c08f5b043d2dcdf66ffc56e009efb385f0b39ad50bb50de5f6b1e0f12",
+        "totalLines": 108,
+        "extractedAt": "2026-10-07T23:21:03.529Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Policy"
+      },
+      "timestamp": "2026-10-07T23:21:03.530Z"
     }
   ],
   "lastVerified": "2026-08-13T11:21:14.457Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-10-07T23:06:01.113Z"
+  "lastModified": "2026-10-07T23:21:03.554Z"
 }
