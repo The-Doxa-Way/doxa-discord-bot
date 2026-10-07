@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "7b325c28fb6e03bc9bf1687d01827ad0b45dd058130c7b6a6d84efa44025d3f4",
+  "merkleRoot": "f553b999b864b2c7e06ae7b338b16539297f2a8556fa15f324f0cab5c1f335a9",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -204,10 +204,44 @@
         "entityType": "Feature"
       },
       "timestamp": "2026-10-07T21:13:24.303Z"
+    },
+    {
+      "hash": "ef7e48e1535e30ce480bd5bdbe33f17457d8e3b3d59182890232f30474d91850",
+      "entityName": "DoxaIsNotAPerson",
+      "content": "2026-10-08: the Art. 9 consent notice (src/consent.ts) said 'what you send me' and 'our privacy policy' — first person for Doxa. Now 'Before you start: what you send here…' and 'the Doxa privacy policy'. src/dispatch.test.ts fails if any bot consent/withdraw/thanks/error string uses I/me/my/we/us/our (the user's 'I agree' button label excepted).",
+      "provenance": {
+        "sourceFile": "src/consent.ts",
+        "lineNumber": 27,
+        "lineRange": null,
+        "fileHash": "7e35ff5bf86e1eac4717c830ee6c54eb5de5971d75dae1f0d41bcbc9e8cc21a8",
+        "totalLines": 106,
+        "extractedAt": "2026-10-07T23:06:01.091Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Policy"
+      },
+      "timestamp": "2026-10-07T23:06:01.094Z"
+    },
+    {
+      "hash": "ec599fe501c4e85d4c0543e2463f9e5524dc0719376e48e76fbfa525b1eb6055",
+      "entityName": "DoxaIsNotAPerson",
+      "content": "2026-10-08 review round: final Discord consent notice reads 'Before you start: what you send to DoxaBot can show your religious beliefs' — naming the product (DoxaBot, Doxa) is the impersonal pattern, not 'here' (ambiguous in a channel) and never 'me/we/our'.",
+      "provenance": {
+        "sourceFile": "src/consent.ts",
+        "lineNumber": 30,
+        "lineRange": null,
+        "fileHash": "1158aa4c08f5b043d2dcdf66ffc56e009efb385f0b39ad50bb50de5f6b1e0f12",
+        "totalLines": 108,
+        "extractedAt": "2026-10-07T23:21:03.529Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Policy"
+      },
+      "timestamp": "2026-10-07T23:21:03.530Z"
     }
   ],
   "lastVerified": "2026-08-13T11:21:14.457Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-10-07T21:13:24.323Z"
+  "lastModified": "2026-10-07T23:21:03.554Z"
 }

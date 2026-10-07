@@ -18,7 +18,16 @@ import type { DoxaClient } from '@thedoxaway/mcp-client';
 import type { Interaction, Message } from 'discord.js';
 
 import { handleInteraction, mentionConsentGate } from './dispatch.js';
-import { CONSENT_BUTTON_ID, CONSENT_VERSION, PRIVACY_URL, type ConsentStore } from './consent.js';
+import {
+  CONSENT_BUTTON_ID,
+  CONSENT_NOTICE,
+  CONSENT_THANKS,
+  CONSENT_VERSION,
+  PRIVACY_URL,
+  SAVE_FAILED_TEXT,
+  WITHDRAWN_TEXT,
+  type ConsentStore,
+} from './consent.js';
 
 const USER = '123456789012345678';
 
@@ -204,4 +213,13 @@ test('index.ts wiring: the mention gate runs before any MCP call, and interactio
   assert.ok(gate > 0 && call > gate, 'mentionConsentGate must come before buildEncourageReply');
   assert.match(src, /handleInteraction\(interaction, \{ doxa, consent \}\)/);
   assert.match(src, /privacyCommand,\n\];/);
+});
+
+// DoxaIsNotAPerson (Garth 2026-09-02): the bot never speaks in the first
+// person. Only the user's own words ("I agree") may use "I".
+test('consent copy has no first-person voice for Doxa', () => {
+  for (const text of [CONSENT_NOTICE, CONSENT_THANKS, WITHDRAWN_TEXT, SAVE_FAILED_TEXT]) {
+    const body = text.replace(/["“]I agree["”]/g, '');
+    assert.doesNotMatch(body, /\b(I|me|my|mine|myself|we|us|our|ours|ourselves|let's)\b/i, text);
+  }
 });

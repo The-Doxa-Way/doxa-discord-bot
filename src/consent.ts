@@ -20,13 +20,17 @@ import {
   ButtonStyle,
 } from 'discord.js';
 
+// Wording-only changes that keep the purpose, processors and withdrawal
+// route do not bump the version (no new consent needed).
 export const CONSENT_VERSION = 'v1.0';
 export const CONSENT_BUTTON_ID = `art9_consent:${CONSENT_VERSION}`;
 export const PRIVACY_URL = 'https://doxa.app/privacy#special-category';
 
+// No first person: Doxa is not a person and never speaks as one
+// (DoxaIsNotAPerson, Garth 2026-09-02). "I agree" is the USER's voice.
 export const CONSENT_NOTICE =
-  'Before we start: what you send me can show your religious beliefs. ' +
-  'Doxa processes your messages, including with the AI providers named in our privacy policy, ' +
+  'Before you start: what you send to DoxaBot can show your religious beliefs. ' +
+  'Doxa processes your messages, including with the AI providers named in the Doxa privacy policy, ' +
   'only to reply to you. You can withdraw at any time by using /privacy. ' +
   `Privacy policy: <${PRIVACY_URL}>`;
 
