@@ -162,6 +162,21 @@ test('a consent store error counts as no consent (fail closed)', async () => {
   assert.match(sent[0]!.content!, /religious beliefs/);
 });
 
+test('a slow consent store times out as no consent, inside Discord\'s 3 s window', async () => {
+  const store: ConsentStore = {
+    has: () => new Promise<boolean>((resolve) => setTimeout(() => resolve(true), 5_000).unref()),
+    grant: async () => {},
+    withdraw: async () => 0,
+  };
+  const { doxa, calls } = fakeDoxa();
+  const { interaction, sent } = fakeCommand('weigh', { word: 'a word' });
+  const started = Date.now();
+  await handleInteraction(interaction, { doxa, consent: store });
+  assert.ok(Date.now() - started < 2_500, `took ${Date.now() - started} ms`);
+  assert.deepEqual(calls, []);
+  assert.match(sent[0]!.content!, /religious beliefs/);
+});
+
 test('/doxaway (no free text) is not gated', async () => {
   const { store } = memoryStore();
   const { doxa, calls } = fakeDoxa();

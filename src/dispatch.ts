@@ -32,6 +32,9 @@ export interface Deps {
 /** Commands whose free-text option is sent to the Doxa MCP. */
 export const CONSENT_GATED_COMMANDS = new Set(['encourage', 'weigh', 'promise', 'scripture']);
 
+/** Leaves time inside Discord's 3 s acknowledgement window for the reply. */
+export const CONSENT_CHECK_TIMEOUT_MS = 1500;
+
 export async function handleInteraction(interaction: Interaction, { doxa, consent }: Deps): Promise<void> {
   // Autocomplete (e.g. /promise area:) must answer fast and on its own path.
   // It filters a fixed local list; nothing leaves the bot.
@@ -61,9 +64,13 @@ export async function handleInteraction(interaction: Interaction, { doxa, consen
   if (!interaction.isChatInputCommand()) return;
 
   try {
-    if (CONSENT_GATED_COMMANDS.has(interaction.commandName) && !(await hasConsent(consent, interaction.user.id))) {
-      await interaction.reply({ ...consentPrompt(), flags: MessageFlags.Ephemeral });
-      return;
+    if (CONSENT_GATED_COMMANDS.has(interaction.commandName)) {
+      // Discord allows 3 s to acknowledge; a cold pooler connection can take
+      // longer, so the check is capped (a timeout counts as no consent).
+      if (!(await hasConsent(consent, interaction.user.id, CONSENT_CHECK_TIMEOUT_MS))) {
+        await interaction.reply({ ...consentPrompt(), flags: MessageFlags.Ephemeral });
+        return;
+      }
     }
 
     switch (interaction.commandName) {

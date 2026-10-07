@@ -63,21 +63,30 @@ export function consentPrompt(): { content: string; components: ActionRowBuilder
 }
 
 /**
- * True only when consent is in force. A read error counts as NOT consented
- * (fail closed: the cost is one extra consent prompt).
+ * True only when consent is in force. A read error, or no answer within
+ * timeoutMs, counts as NOT consented (fail closed: the cost is one extra
+ * consent prompt).
  */
-export async function hasConsent(store: ConsentStore, userId: string): Promise<boolean> {
+export async function hasConsent(store: ConsentStore, userId: string, timeoutMs?: number): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    return await store.has(userId);
+    const read = store.has(userId);
+    if (timeoutMs === undefined) return await read;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`consent check timed out after ${timeoutMs} ms`)), timeoutMs);
+    });
+    return await Promise.race([read, timeout]);
   } catch (err) {
     console.error('[consent] read failed', err instanceof Error ? err.message : err);
     return false;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
 /** Postgres-backed store, via the Supabase pooler (transaction mode). */
 export function pgConsentStore(databaseUrl: string): ConsentStore {
-  const sql = postgres(databaseUrl, { prepare: false, max: 2, idle_timeout: 60, connect_timeout: 10 });
+  const sql = postgres(databaseUrl, { prepare: false, max: 2, connect_timeout: 10 });
   return {
     async has(userId) {
       const [row] = await sql<{ ok: boolean }[]>`select public.discord_bot_consent_status(${userId}) as ok`;

@@ -17,7 +17,7 @@
     "dev": "node --watch --experimental-strip-types src/index.ts",
     "deploy-commands": "node --experimental-strip-types src/deploy-commands.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsc -p tsconfig.test.json && node --test \".test-dist/**/*.test.js\""
+    "test": "tsc -p tsconfig.test.json && node --test $(find .test-dist -name '*.test.js')"
   },
   "engines": {
     "node": ">=20"
