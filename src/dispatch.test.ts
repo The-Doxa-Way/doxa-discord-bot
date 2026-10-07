@@ -219,7 +219,7 @@ test('index.ts wiring: the mention gate runs before any MCP call, and interactio
 // person. Only the user's own words ("I agree") may use "I".
 test('consent copy has no first-person voice for Doxa', () => {
   for (const text of [CONSENT_NOTICE, CONSENT_THANKS, WITHDRAWN_TEXT, SAVE_FAILED_TEXT]) {
-    const body = text.replace(/"I agree"/g, '');
-    assert.doesNotMatch(body, /\b(I|me|my|mine|we|us|our)\b/i, text);
+    const body = text.replace(/["“]I agree["”]/g, '');
+    assert.doesNotMatch(body, /\b(I|me|my|mine|myself|we|us|our|ours|ourselves|let's)\b/i, text);
   }
 });
