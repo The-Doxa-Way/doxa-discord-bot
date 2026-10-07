@@ -7,30 +7,40 @@
  *   /doxaway    [movement:<doxa-way-movement>]
  *   /weigh      word:<text>
  *   /promise    area:<text, autocomplete>
+ *   /privacy    withdraw Art. 9 consent and delete stored messages
  *
  * Backed by Doxa MCP at doxa.app/mcp/v1. Uses BYOL (server-side Anthropic key)
  * if ANTHROPIC_API_KEY is set, otherwise the free anon tier (50 calls/day per IP).
+ *
+ * GDPR Art. 9: free text goes to the MCP only after the user presses
+ * "I agree" (src/consent.ts). Consent is stored in the Doxa database through
+ * the least-privilege discord_bot role (DATABASE_URL).
  */
 
 import {
   Client,
   Events,
   GatewayIntentBits,
-  MessageFlags,
   PermissionsBitField,
   type Interaction,
   type Message,
 } from 'discord.js';
 import { DoxaClient, DoxaRateLimitError, DoxaError } from '@thedoxaway/mcp-client';
 
-import { encourageCommand, handleEncourage, buildEncourageReply } from './commands/encourage.js';
-import { scriptureCommand, handleScripture } from './commands/scripture.js';
-import { doxawayCommand, handleDoxaway } from './commands/doxaway.js';
-import { weighCommand, handleWeigh } from './commands/weigh.js';
-import { promiseCommand, handlePromise, handlePromiseAutocomplete } from './commands/promise.js';
+import { encourageCommand, buildEncourageReply } from './commands/encourage.js';
+import { scriptureCommand } from './commands/scripture.js';
+import { doxawayCommand } from './commands/doxaway.js';
+import { weighCommand } from './commands/weigh.js';
+import { promiseCommand } from './commands/promise.js';
+import { privacyCommand } from './commands/privacy.js';
+import { PRIVACY_URL, pgConsentStore } from './consent.js';
+import { handleInteraction, mentionConsentGate } from './dispatch.js';
 
 const DISCORD_BOT_TOKEN = required('DISCORD_BOT_TOKEN');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+// Required: without a consent store the bot cannot lawfully process free
+// text, so it refuses to start rather than run half-working.
+const consent = pgConsentStore(required('DATABASE_URL'));
 
 function required(name: string): string {
   const v = process.env[name];
@@ -74,63 +84,7 @@ client.once(Events.ClientReady, async (c) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
-  // Autocomplete (e.g. /promise area:) must answer fast and on its own path.
-  if (interaction.isAutocomplete()) {
-    try {
-      if (interaction.commandName === 'promise') {
-        await handlePromiseAutocomplete(interaction);
-      } else {
-        await interaction.respond([]);
-      }
-    } catch (err) {
-      console.error('[autocomplete]', err);
-    }
-    return;
-  }
-
-  if (!interaction.isChatInputCommand()) return;
-
-  try {
-    switch (interaction.commandName) {
-      case 'encourage':
-        await handleEncourage(interaction, doxa);
-        break;
-      case 'scripture':
-        await handleScripture(interaction, doxa);
-        break;
-      case 'doxaway':
-        await handleDoxaway(interaction, doxa);
-        break;
-      case 'weigh':
-        await handleWeigh(interaction, doxa);
-        break;
-      case 'promise':
-        await handlePromise(interaction, doxa);
-        break;
-      default:
-        await replyEphemeral(interaction, `Unknown command: \`${interaction.commandName}\``);
-    }
-  } catch (err) {
-    console.error(`[${interaction.commandName}]`, err instanceof Error ? err.message : err);
-    try {
-      if (err instanceof DoxaRateLimitError) {
-        await replyEphemeral(
-          interaction,
-          `Today's free encouragement is done (${err.quota.used}/${err.quota.limit} in 24h).\n` +
-            `For unlimited, install the Doxa app: <https://doxa.app/get?utm_source=discord&utm_medium=rate-limit>\n` +
-            `Or drop in your own Anthropic key: <${err.byolUrl}>`,
-        );
-      } else if (err instanceof DoxaError) {
-        await replyEphemeral(interaction, `Doxa MCP returned an error: ${err.message}`);
-      } else {
-        await replyEphemeral(interaction, 'Something went wrong. Please try again.');
-      }
-    } catch (replyErr) {
-      // Interaction expired or was already acknowledged — log and move on.
-      // Do NOT let this crash the process, which would cause a restart loop.
-      console.error('[reply-failed]', replyErr instanceof Error ? replyErr.message : replyErr);
-    }
-  }
+  await handleInteraction(interaction, { doxa, consent });
 });
 
 // Throttles for the @mention handler. In-memory is fine for a single process;
@@ -231,8 +185,9 @@ client.on(Events.MessageCreate, async (message: Message) => {
     try {
       await message.reply({
         content:
-          'Add what you are facing — for example: ' +
-          '`@DoxaBot I am anxious about a decision`',
+          'Add what you are facing, for example: ' +
+          '`@DoxaBot I am anxious about a decision`\n' +
+          `Privacy policy: <${PRIVACY_URL}>`,
         allowedMentions: { parse: [], repliedUser: false },
       });
     } catch (err) {
@@ -240,6 +195,10 @@ client.on(Events.MessageCreate, async (message: Message) => {
     }
     return;
   }
+
+  // GDPR Art. 9: without consent the text goes nowhere; the author gets the
+  // consent notice instead.
+  if (!(await mentionConsentGate(message, consent))) return;
 
   // Process-wide guards on the paid cost path: drop silently when the global
   // rate is exhausted or too many calls are already in flight.
@@ -289,17 +248,6 @@ client.on(Events.MessageCreate, async (message: Message) => {
   }
 });
 
-async function replyEphemeral(
-  interaction: import('discord.js').ChatInputCommandInteraction,
-  content: string,
-): Promise<void> {
-  if (interaction.replied || interaction.deferred) {
-    await interaction.followUp({ content, flags: MessageFlags.Ephemeral });
-  } else {
-    await interaction.reply({ content, flags: MessageFlags.Ephemeral });
-  }
-}
-
 // Surface the command definitions for the deploy-commands script.
 export const COMMANDS = [
   encourageCommand,
@@ -307,6 +255,7 @@ export const COMMANDS = [
   doxawayCommand,
   weighCommand,
   promiseCommand,
+  privacyCommand,
 ];
 
 client.login(DISCORD_BOT_TOKEN);

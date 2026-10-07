@@ -19,6 +19,7 @@ import { scriptureCommand } from './commands/scripture.js';
 import { doxawayCommand } from './commands/doxaway.js';
 import { weighCommand } from './commands/weigh.js';
 import { promiseCommand } from './commands/promise.js';
+import { privacyCommand } from './commands/privacy.js';
 
 const DISCORD_BOT_TOKEN = required('DISCORD_BOT_TOKEN');
 const DISCORD_CLIENT_ID = required('DISCORD_CLIENT_ID');
@@ -39,6 +40,7 @@ const commands = [
   doxawayCommand,
   weighCommand,
   promiseCommand,
+  privacyCommand,
 ].map((c) => c.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(DISCORD_BOT_TOKEN);

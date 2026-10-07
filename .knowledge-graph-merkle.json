@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "959afecb16a9cad7abc73f47f0d9298f6f33c0fb0ccc075d61342d795eba740b",
+  "merkleRoot": "7b325c28fb6e03bc9bf1687d01827ad0b45dd058130c7b6a6d84efa44025d3f4",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -187,10 +187,27 @@
         "entityType": "Bug"
       },
       "timestamp": "2026-09-02T18:08:18.852Z"
+    },
+    {
+      "hash": "be11e878715a1d8f8aaef95d544fd471b35c9740bf3b7cecd77c692dbc12e813",
+      "entityName": "DiscordArt9Consent",
+      "content": "2026-10-07 GDPR Art. 9 consent gate: /encourage, /weigh, /promise, /scripture and @mentions forward free text to the Doxa MCP (which calls the AI provider and logs request_payload with caller_id discord:<id> in mcp_calls) only after the user presses the 'I agree' button (custom_id art9_consent:v1.0). /doxaway is not gated (no free text). /privacy withdraws and deletes that user's mcp_calls rows. The bot had no datastore and Doxa had no endpoint for it, so consent lives in doxa-app prod table bot_consents (platform discord) reached through the least-privilege Postgres LOGIN role discord_bot via the Supabase pooler (DATABASE_URL, postgres.js, prepare:false); the role can only EXECUTE discord_bot_consent_{status,grant,withdraw} and is denied every table, so no service-role key sits on Fly. DATABASE_URL is required at boot; the URL is in the macOS Keychain (service 'doxa-discord-bot DATABASE_URL'). Routing moved to src/dispatch.ts so tests (node --test via tsconfig.test.json, npm test) drive it with fakes. Store read errors fail closed.",
+      "provenance": {
+        "sourceFile": "src/consent.ts",
+        "lineNumber": null,
+        "lineRange": null,
+        "fileHash": "d1f936f2c23e3ce98335f0513471084c90aa8b525d0592316e46b9116b7fbb34",
+        "totalLines": 95,
+        "extractedAt": "2026-10-07T21:13:24.302Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Feature"
+      },
+      "timestamp": "2026-10-07T21:13:24.303Z"
     }
   ],
   "lastVerified": "2026-08-13T11:21:14.457Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-09-02T18:08:18.879Z"
+  "lastModified": "2026-10-07T21:13:24.323Z"
 }
