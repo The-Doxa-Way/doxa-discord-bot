@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "f553b999b864b2c7e06ae7b338b16539297f2a8556fa15f324f0cab5c1f335a9",
+  "merkleRoot": "c850cf211e9941c8d36562d0cce5d00321911d1343d378755a576ad073d7cd44",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -238,10 +238,27 @@
         "entityType": "Policy"
       },
       "timestamp": "2026-10-07T23:21:03.530Z"
+    },
+    {
+      "hash": "247d82d879feabd34006699dd4443985340cd3bfd6a5fd4483fcba880ba88634",
+      "entityName": "DockerBaseImageNode22",
+      "content": "Bumped Dockerfile builder+runtime base images from node:20-slim to node:22-slim: Node 20 is EOL and received no fixes for the 2026-10-21 security releases (Brotli decoder RCE, two TLS hostname-check bypasses, dns.resolve NUL-truncation — all HIGH severity). engines field left at >=20 (floor, not pin).",
+      "provenance": {
+        "sourceFile": "Dockerfile",
+        "lineNumber": null,
+        "lineRange": null,
+        "fileHash": "9e949ee82226e6c4b850289a59ce21c6a1034b0ff46fa7baeb686088ec5eb8fa",
+        "totalLines": 29,
+        "extractedAt": "2026-10-21T18:48:49.505Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Fix"
+      },
+      "timestamp": "2026-10-21T18:48:49.506Z"
     }
   ],
   "lastVerified": "2026-08-13T11:21:14.457Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-10-07T23:21:03.554Z"
+  "lastModified": "2026-10-21T18:48:49.566Z"
 }
