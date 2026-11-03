@@ -68,6 +68,13 @@
       "observations": [
         "Bumped Dockerfile builder+runtime base images from node:20-slim to node:22-slim: Node 20 is EOL and received no fixes for the 2026-10-21 security releases (Brotli decoder RCE, two TLS hostname-check bypasses, dns.resolve NUL-truncation — all HIGH severity). engines field left at >=20 (floor, not pin)."
       ]
+    },
+    {
+      "name": "FleetSecurityBaseline20261103",
+      "entityType": "Decision",
+      "observations": [
+        "2026-11-03 fleet security baseline (doxa-cns config/fleet.yaml): .github/workflows/secret-scan.yml runs gitleaks 8.30.1 (job id 'gitleaks' = required check of the org ruleset 'fleet: PR + secret scan') on PR commits, and on all history weekly (Mon 04:17 UTC) and on dispatch; config .gitleaks.toml (default rules); classified history findings live in .gitleaksignore pinned to their commit. .github/dependabot.yml: weekly, limit 5, minor+patch grouped. Dependabot ecosystems: npm /, docker /, github-actions. Full-history scan: 0 findings. Fixed 3 HIGH + 5 medium + 2 low Dependabot alerts by an in-range lockfile update: undici 6.24.1->6.29.1, ws 8.20.1->8.22.1, discord.js 14.26.4->14.28.0 (npm audit 0). Fly.io deploy is manual (flyctl deploy, no CI deploy)."
+      ]
     }
   ],
   "relations": []

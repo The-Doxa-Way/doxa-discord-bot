@@ -4,8 +4,9 @@
 <!-- Lookup: Grep this file for your topic, then open the entity in graph.json. -->
 <!-- Never read graph.json whole for a lookup.   -->
 
-## Decision (2)
+## Decision (3)
 
+- FleetSecurityBaseline20261103 — 2026-11-03 fleet security baseline (doxa-cns config/fleet.yaml): .github/workflows/secret-scan.yml runs gitle…
 - GatesThatCannotFire20260815 — Applied the doxa-browser-extension gate fixes to this repo, which the kit was copied from. (1) 'gh repo view …
 - KgGuardRequiredCheckNaming — The kg-guard job now carries an explicit 'name: KG Guard'. Without it the job reports its check-run under the…
 
