@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "c850cf211e9941c8d36562d0cce5d00321911d1343d378755a576ad073d7cd44",
+  "merkleRoot": "33d92aab8b21c7dea382cc34cfb8a6ecd385a742345e987d48b112059fec423b",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -255,10 +255,27 @@
         "entityType": "Fix"
       },
       "timestamp": "2026-10-21T18:48:49.506Z"
+    },
+    {
+      "hash": "e00943cb75a29f5f5a8492cedea7bbc2dcab7e4eb43ccc7885455173e76b1986",
+      "entityName": "FleetSecurityBaseline20261103",
+      "content": "2026-11-03 fleet security baseline (doxa-cns config/fleet.yaml): .github/workflows/secret-scan.yml runs gitleaks 8.30.1 (job id 'gitleaks' = required check of the org ruleset 'fleet: PR + secret scan') on PR commits, and on all history weekly (Mon 04:17 UTC) and on dispatch; config .gitleaks.toml (default rules); classified history findings live in .gitleaksignore pinned to their commit. .github/dependabot.yml: weekly, limit 5, minor+patch grouped. Dependabot ecosystems: npm /, docker /, github-actions. Full-history scan: 0 findings. Fixed 3 HIGH + 5 medium + 2 low Dependabot alerts by an in-range lockfile update: undici 6.24.1->6.29.1, ws 8.20.1->8.22.1, discord.js 14.26.4->14.28.0 (npm audit 0). Fly.io deploy is manual (flyctl deploy, no CI deploy).",
+      "provenance": {
+        "sourceFile": ".github/workflows/secret-scan.yml",
+        "lineNumber": 1,
+        "lineRange": null,
+        "fileHash": "af9088771b015861fed3514c1feab7e06a2e0b4710f35f9eee8c0557d19b2b51",
+        "totalLines": 80,
+        "extractedAt": "2026-11-03T09:12:33.061Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Decision"
+      },
+      "timestamp": "2026-11-03T09:12:33.062Z"
     }
   ],
-  "lastVerified": "2026-08-13T11:21:14.457Z",
+  "lastVerified": "2026-11-03T09:12:40.102Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-10-21T18:48:49.566Z"
+  "lastModified": "2026-11-03T09:12:40.103Z"
 }
