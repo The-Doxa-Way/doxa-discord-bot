@@ -32,3 +32,7 @@
 ## Policy (1)
 
 - DoxaIsNotAPerson — Garth 2026-09-02, on the Discord mention prompt 'Tell me what you are facing and I will encourage you': 'I ha…
+
+## Reference (1)
+
+- FleetGates — 2026-11-05: re-rendered the gate hooks from The-Doxa-Way-CNS fleet/gates templates at 971d0c9245 (CNS #2417, …
