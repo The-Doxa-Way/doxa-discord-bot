@@ -1,100 +1,133 @@
 #!/usr/bin/env bash
 #
-# test-gate.sh — PreToolUse gate: code changes need test changes.
+# test-gate.sh — PreToolUse hook for the GitHub MCP merge tool (and Bash
+# `gh pr merge` where settings.json wires it on the Bash matcher).
+#
 # Garth's standing rule (2026-07-16): "tests for all the code we write."
-# Ported from doxa-cns / openclaw for doxa-discord-bot.
+# A doxa-discord-bot PR merge is blocked when the chunk (merge-base(origin/main,
+# tip)..tip, for the landing tip — see "Which tip" below) adds or modifies
+# code — this repo's code_re, minus its test_re and code_exclude_re (set per
+# repo in doxa-cns config/fleet.yaml `gates:`) — while changing NO test file
+# (test_re). The escape hatch is an EXPLICIT logged waiver in the shared
+# attestation ledger: scripts/attest-review.sh "waived-tests: <reason>".
 #
-# A doxa-discord-bot PR merge — via mcp__github__merge_pull_request OR a Bash
-# `gh pr merge` — is blocked when the chunk (merge-base(origin/main, tip)..tip,
-# across HEAD and all worktree tips, PLUS the PR's real file list via
-# `gh pr diff` when a PR number is resolvable — a local worktree tip alone
-# can't be trusted to be the PR actually being merged) adds or modifies
-# hand-authored code while changing NO test file. The escape hatch is an
-# EXPLICIT logged waiver in the shared attestation ledger:
-# scripts/attest-review.sh "waived-tests: <reason>".
+# ESM coverage (2026-07-19): the pattern was `\.js$`, blind to the fleet's
+# .mjs detectors (7 in gated dirs) — they could merge untested with the gate
+# none the wiser. Broadened to `\.(c|m)?js$` so .js/.mjs/.cjs all count.
+# A test_re that matches NOTHING turns this gate into a no-op (doxa-discord-bot
+# sat green that way until 2026-08-15): keep each repo's patterns in step with
+# the files its test runner really executes.
 #
-# What counts as CODE: src/**/*.{ts,js} (the bot's TypeScript source; dist/ is
-# build output and never counts, .test.ts files are excluded from CODE below
-# since they ARE the test signal).
+# FAIL-OPEN philosophy (matches kg-save-gate.sh / review-gate.sh): any
+# uncertainty allows. Only the confirmed case blocks: code changed, zero test
+# changes, zero waiver for the tip. Docs, vault, generated state, YAML, and
+# shell hooks (exercised by live self-tests, not the node runner) never
+# trigger it.
 #
-# What counts as a TEST change: src/**/*.test.{ts,js} (colocated, this repo
-# has no tests/ directory yet) or tests/**.
-#
-# FAIL-OPEN: any uncertainty allows. Only the confirmed case blocks: code
-# changed, zero test changes, zero waiver for the tip.
+# BASH surface + repo attribution: identical to review-gate.sh (see there).
 #
 # Exit codes: 0 = allow, 2 = block (stderr shown to the model).
-
-# gh repo view takes OWNER/REPO, never a path — `gh repo view "$dir"` is an
-# argument error that always fails, which silently disabled the PR-file-list
-# lookups this gate depends on. Resolve the slug from the checkout's remote.
-repo_slug_of() {
-  git -C "$1" remote get-url origin 2>/dev/null     | sed -E 's#^git@[^:]+:##; s#^https?://[^/]+/##; s#\.git$##'
-}
 
 payload="$(cat 2>/dev/null)" || exit 0
 [ -n "$payload" ] || exit 0
 command -v jq >/dev/null 2>&1 || exit 0
 
+# bounded <secs> <cmd…> — the gh calls below are bounded (as kg-save-gate.sh):
+# a stalled gh would hold the merge until the harness's hook timeout. macOS has
+# no `timeout` unless coreutils is installed; without one the call runs as before.
+bounded() {
+  local secs="$1"; shift
+  if command -v timeout >/dev/null 2>&1; then timeout "$secs" "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then gtimeout "$secs" "$@"
+  else "$@"
+  fi
+}
+
+# This repo's names, any case (rename doxa-cns -> The-Doxa-Way-CNS, spec S1/S2).
+self_id="$(printf '%s' 'doxa-discord-bot' | tr '[:upper:]' '[:lower:]')"
+self_slug="$(printf '%s' 'doxa-discord-bot' | tr '[:upper:]' '[:lower:]')"
+is_self() {
+  local n
+  n="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's#/pull/[0-9]+.*$##; s#/+$##; s#\.git$##; s#^.*[/:]##')"
+  [ -n "$n" ] && { [ "$n" = "$self_id" ] || [ "$n" = "$self_slug" ]; }
+}
+
+code_re='^(src|scripts)/.+\.(ts|js|cjs|mjs)$'
+test_re='^(scripts/.+\.test\.(cjs|mjs|js|ts)|src/.+\.test\.(ts|js)|tests?/.+)$'
+code_exclude_re=''   # empty = nothing excluded
+
 repo="$(printf '%s' "$payload" | jq -r '.tool_input.repo // empty' 2>/dev/null)"
 cmd="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null)"
 
+# The PR being merged (same parse as review-gate.sh).
+pr_ref="$(printf '%s' "$payload" | jq -r '(.tool_input.pullNumber // .tool_input.pull_number // empty) | if type == "number" then floor else . end | tostring' 2>/dev/null)"
+if [ -z "$pr_ref" ] && [ -n "$cmd" ]; then
+  pr_cmd="$(printf '%s' "$cmd" | tr -d "\"'(){}\`")"
+  set -f
+  # shellcheck disable=SC2086
+  set -- $pr_cmd
+  set +f
+  while [ $# -ge 3 ] && ! { [ "$1" = "gh" ] && [ "$2" = "pr" ] && [ "$3" = "merge" ]; }; do shift; done
+  if [ $# -ge 3 ]; then shift 3; else set --; fi
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --repo|-R|--body|-b|--body-file|-F|--subject|-t|--match-head-commit|--author-email|-A) shift; [ $# -gt 0 ] && shift ;;
+      -*) shift ;;
+      '&&'|';'|'|'|'||') break ;;
+      *) pr_ref="${1%%[;&|]*}"; break ;;
+    esac
+  done
+fi
+
 dir="${CLAUDE_PROJECT_DIR:-$PWD}"
-remote_head_sha=""    # PR's real head SHA, when resolvable
-remote_changed=""     # PR's real changed-file list (gh pr diff), when resolvable
+flag_repo=""
+landing=merge
 
 if [ -n "$repo" ]; then
-  # MCP merge tool: gate only this repo.
-  [ "$repo" = "doxa-discord-bot" ] || exit 0
+  # MCP merge tool: gate only this repo; siblings pass.
+  is_self "$repo" || exit 0
+elif [ -n "$cmd" ]; then
+  scan="$(printf '%s' "$cmd" | tr -d "\"'")"
+  landing=""
+  if printf '%s' "$scan" | grep -qE '(^|[;&|(){}`])[[:space:]]*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*gh[[:space:]]+pr[[:space:]]+merge([[:space:];&|>)]|$)'; then
+    landing=merge
+  fi
+  [ -n "$landing" ] || exit 0   # not a landing command
 
-  # Resolve the PR's REAL file list + head SHA via gh, the same defence
-  # kg-save-gate.sh's MCP branch already uses — a local worktree tip cannot
-  # be trusted to be the PR actually being merged.
-  mcp_owner="$(printf '%s' "$payload" | jq -r '.tool_input.owner // empty' 2>/dev/null)"
-  mcp_pr="$(printf '%s' "$payload" | jq -r '(.tool_input.pullNumber // empty) | if type == "number" then floor else . end' 2>/dev/null)"
-  if [ -n "$mcp_owner" ] && [ -n "$mcp_pr" ] && command -v gh >/dev/null 2>&1; then
-    case "$mcp_pr" in
-      ''|*[!0-9]*) : ;;
-      *)
-        remote_head_sha="$(gh pr view "$mcp_pr" --repo "$mcp_owner/$repo" --json headRefOid -q .headRefOid 2>/dev/null)"
-        remote_changed="$(gh pr diff "$mcp_pr" --repo "$mcp_owner/$repo" --name-only 2>/dev/null)"
-        ;;
+  flag_repo="$(printf '%s' "$scan" | grep -oE -- '(-R|--repo)([[:space:]]+|=)[^[:space:];&|)]+' | head -1 | sed -E 's/^(-R|--repo)([[:space:]]+|=)//')"
+  [ -n "$flag_repo" ] || flag_repo="$(printf '%s' "$scan" | grep -oE '(^|[;&|[:space:]])GH_REPO=[^[:space:];&|]+' | head -1 | sed -E 's/^.*GH_REPO=//')"
+  if [ -z "$flag_repo" ]; then
+    case "$pr_ref" in
+      https://github.com/*/*/pull/*|github.com/*/*/pull/*) flag_repo="$pr_ref" ;;
     esac
   fi
-elif [ -n "$cmd" ]; then
-  # Bash tool: gate only `gh pr merge` at command position (same matching as
-  # review-gate.sh — under-block, never over-block).
-  printf '%s' "$cmd" | grep -qE '(^|&&|;)[[:space:]]*(cd[[:space:]]+[^;&|]+(&&|;)[[:space:]]*)?([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+)*gh[[:space:]]+pr[[:space:]]+merge([[:space:];&|>]|$)' || exit 0
-
-  flag_repo="$(printf '%s' "$cmd" | grep -oE '(-R|--repo)([[:space:]]+|=)[^[:space:];&|]+' | head -1 | sed -E 's/^(-R|--repo)([[:space:]]+|=)//')"
   if [ -n "$flag_repo" ]; then
-    case "$flag_repo" in
-      doxa-discord-bot|*/doxa-discord-bot) ;;
-      *) exit 0 ;;
-    esac
+    is_self "$flag_repo" || exit 0   # sibling repo — their gates, not ours
   else
     hook_cwd="$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)"
-    cmd_cd="$(printf '%s' "$cmd" | grep -oE '^[[:space:]]*cd[[:space:]]+/[^[:space:];&|]+' | head -1 | sed -E 's#^[[:space:]]*cd[[:space:]]+##')"
-    if [ -n "$cmd_cd" ] && [ -d "$cmd_cd" ]; then
-      dir="$cmd_cd"
-    else
-      dir="${hook_cwd:-$dir}"
-    fi
-    repo_common="$(git -C "$dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || exit 0
-    proj_common="$(git -C "${CLAUDE_PROJECT_DIR:-$PWD}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
-    [ -n "$proj_common" ] || exit 0
-    [ "$repo_common" = "$proj_common" ] || exit 0
-  fi
-
-  # `gh pr merge <N>` names the PR explicitly — resolve its real file list +
-  # head SHA the same way the MCP branch above does.
-  cmd_pr="$(printf '%s' "$cmd" | grep -oE 'pr[[:space:]]+merge[[:space:]]+[0-9]+' | grep -oE '[0-9]+$' | head -1)"
-  if [ -n "$cmd_pr" ] && command -v gh >/dev/null 2>&1; then
-    cmd_pr_repo="${flag_repo:-20 20 12 61 79 80 81 98 701 33 100 204 250 395 398 399 400repo_slug_of "")}"
-    if [ -n "$cmd_pr_repo" ]; then
-      remote_head_sha="$(gh pr view "$cmd_pr" --repo "$cmd_pr_repo" --json headRefOid -q .headRefOid 2>/dev/null)"
-      remote_changed="$(gh pr diff "$cmd_pr" --repo "$cmd_pr_repo" --name-only 2>/dev/null)"
-    fi
+    [ -n "$hook_cwd" ] && dir="$hook_cwd"
+    remaining="$scan"
+    while [[ "$remaining" =~ ^[[:space:]]*cd[[:space:]]+([^\;\&]+)(\&\&|\;)(.*)$ ]]; do
+      cmd_cd="$(printf '%s' "${BASH_REMATCH[1]}" | sed -E 's/[[:space:]]+$//')"
+      case "$cmd_cd" in
+        '~') cmd_cd="$HOME" ;;
+        '~/'*) cmd_cd="$HOME/${cmd_cd#\~/}" ;;
+        /*) : ;;
+        *) [ -n "$hook_cwd" ] && [ -d "$hook_cwd" ] && cmd_cd="$hook_cwd/$cmd_cd" ;;
+      esac
+      [ -n "$cmd_cd" ] && [ -d "$cmd_cd" ] && dir="$cmd_cd"
+      remaining="${BASH_REMATCH[3]}"
+    done
+    target_origin="$(git -C "$dir" remote get-url origin 2>/dev/null)"
+    case "$target_origin" in
+      *github.com[:/]*) is_self "$target_origin" || exit 0 ;;
+      *)
+        repo_common="$(git -C "$dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || exit 0
+        proj_common="$(git -C "${CLAUDE_PROJECT_DIR:-$PWD}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+        [ -n "$repo_common" ] && [ -n "$proj_common" ] || exit 0
+        [ "$repo_common" = "$proj_common" ] || exit 0
+        ;;
+    esac
   fi
 else
   exit 0
@@ -105,18 +138,75 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || exit 0
 ledger="$common/review-attest.jsonl"
 
-# This repo's real layout, checked against `git ls-files` (2026-08-15): sources
-# are src/**.ts, and the only tests that exist are scripts/*.test.cjs. The
-# ported patterns named a tests/ directory that has never existed here and a
-# colocated src/**.test.ts that has never been written, so test_re matched
-# NOTHING — a gate whose test pattern matches nothing can never block, which is
-# how it sat green while gating nothing. Keep these in step with the repo.
-test_re='^(scripts/.+\.test\.(cjs|mjs|js|ts)|src/.+\.test\.(ts|js)|tests?/.+)$'
-code_re='^(src|scripts)/.+\.(ts|js|cjs|mjs)$'
-
-# Evaluate HEAD plus every worktree tip; the merge could land any of them.
-tips="$(git rev-parse HEAD 2>/dev/null)
+# Which tip does this merge land? When the caller names the PR head
+# (bash-merge-gate.sh passes a top-level .merge_gate_head_sha), judge ONLY that tip: judging
+# every local worktree tip let another session's untested sibling worktree
+# block an unrelated, fully tested PR (#720, 2026-09-24 doxa-cns #938; doxa-app
+# #1142, 2026-08-24). Fetch the head if it isn't local. If it still can't be
+# resolved, fall back to the old all-tips scan -- never a weaker check than
+# before. Top level, never .tool_input: the MCP merge hook hands this gate the
+# tool call's own input, so a head_sha there would let the caller name a tested
+# commit other than the PR's. Without a wrapper, the head comes from GitHub
+# itself (`gh pr view` on the PR being merged — doxa-app / browser-extension
+# fix), never from caller-supplied text.
+head_sha="$(printf '%s' "$payload" | jq -r '.merge_gate_head_sha // empty' 2>/dev/null)"
+gh_slug=""
+if [ -n "$pr_ref" ] && command -v gh >/dev/null 2>&1; then
+  gh_slug="$(git remote get-url origin 2>/dev/null | sed -E 's#^.*github\.com[:/]##; s#\.git$##')"
+  case "$flag_repo" in
+    */*) gh_slug="$(printf '%s' "$flag_repo" | sed -E 's#^https?://##; s#^github\.com/##; s#/pull/.*$##; s#\.git$##')" ;;
+  esac
+  if [ -z "$head_sha" ] && [ -n "$gh_slug" ]; then
+    head_sha="$(bounded 15 gh pr view "$pr_ref" --repo "$gh_slug" --json headRefOid -q .headRefOid 2>/dev/null || true)"
+  fi
+fi
+tips=""
+if printf '%s' "$head_sha" | grep -qE '^[0-9a-f]{40}$'; then
+  # Bounded (review round): this fetch is new I/O the #720 fix introduced.
+  # A stalled origin would otherwise run until the hook's own timeout, which
+  # (per this file's own documented fail-open philosophy) merges unchecked
+  # rather than blocking -- so keep the stall itself short.
+  git cat-file -e "$head_sha^{commit}" 2>/dev/null \
+    || git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=10 \
+         fetch -q origin "$head_sha" >/dev/null 2>&1 || true
+  git cat-file -e "$head_sha^{commit}" 2>/dev/null && tips="$head_sha"
+fi
+# Chained `git push && gh pr merge N` race: bash-merge-gate.sh resolves
+# head_sha from the PRE-push remote tip, stale the instant the chained push
+# moves it. When it detected a leading push, it also hands us THIS
+# worktree's own current HEAD (never sibling worktrees -- #720) so the
+# about-to-be-pushed tip is judged too, not just the stale remote one.
+local_head_sha="$(printf '%s' "$payload" | jq -r '.merge_gate_local_head_sha // empty' 2>/dev/null)"
+if [ -n "$tips" ] && [ "$local_head_sha" != "$head_sha" ] \
+   && printf '%s' "$local_head_sha" | grep -qE '^[0-9a-f]{40}$' \
+   && git cat-file -e "$local_head_sha^{commit}" 2>/dev/null; then
+  tips="$tips
+$local_head_sha"
+fi
+# A direct push lands THIS worktree's HEAD — the exact tip, no fallback needed.
+[ "$landing" = push ] && tips="$(git rev-parse HEAD 2>/dev/null)"
+# The PR's real file list (GitHub's own), judged below IN ADDITION to the
+# local tip(s) — ALWAYS on a merge with a resolvable PR, not only when the
+# head is unfetchable (browser-extension / discord-bot fix, kept whole by the
+# rollout review 2026-11-05): a local diff runs against a possibly stale local
+# origin/<base>, so test files that came in from a base merged into the PR
+# could pass as the PR's own tests. GitHub's list cannot be fooled that way.
+remote_changed=""
+if [ "$landing" = merge ] && [ -n "$pr_ref" ] && [ -n "$gh_slug" ]; then
+  remote_changed="$(bounded 15 gh pr diff "$pr_ref" --repo "$gh_slug" --name-only 2>/dev/null || true)"
+fi
+# Otherwise: HEAD plus every worktree tip; the merge could land any of them.
+[ -n "$tips" ] || tips="$(git rev-parse HEAD 2>/dev/null)
 $(git worktree list --porcelain 2>/dev/null | sed -n 's/^HEAD //p')"
+
+# code_of / tests_of <changed-file list>: this repo's code and test files.
+code_of() {
+  local c
+  c="$(printf '%s\n' "$1" | grep -vE "$test_re" | grep -E "$code_re")"
+  [ -n "$code_exclude_re" ] && c="$(printf '%s\n' "$c" | grep -vE "$code_exclude_re")"
+  printf '%s' "$c"
+}
+tests_of() { printf '%s\n' "$1" | grep -E "$test_re"; }
 
 code_without_tests=""
 while IFS= read -r sha; do
@@ -124,32 +214,29 @@ while IFS= read -r sha; do
   base="$(git merge-base "$sha" origin/main 2>/dev/null)" || continue
   [ "$base" = "$sha" ] && continue   # nothing landing from this tip
   changed="$(git diff --name-only "$base" "$sha" 2>/dev/null)" || continue
-  tests="$(printf '%s\n' "$changed" | grep -E "$test_re")"
-  code="$(printf '%s\n' "$changed" | grep -vE "$test_re" | grep -E "$code_re")"
+
+  code="$(code_of "$changed")"
+  tests="$(tests_of "$changed")"
   if [ -n "$code" ] && [ -z "$tests" ]; then
-    # Waived for this tip? (explicit, logged — never silent)
-    if [ -f "$ledger" ] && grep "\"sha\":\"$sha\"" "$ledger" 2>/dev/null | grep -q '"verdict":"waived-tests:'; then
+    # Waived for this tip? (explicit, logged — never silent).
+    if [ -f "$ledger" ] && grep -q "\"sha\":\"$sha\"" "$ledger" 2>/dev/null \
+       && grep "\"sha\":\"$sha\"" "$ledger" | grep -q '"verdict":"waived-tests:' 2>/dev/null; then
       continue
     fi
-    code_without_tests="$code"
+    code_without_tests="$(printf '%s\n%s' "$code_without_tests" "$code")"
   fi
 done <<EOF
 $tips
 EOF
 
-# The PR's real diff (when resolved via gh above) — evaluated directly
-# against its own file list rather than a local merge-base, so it still
-# catches an MCP/`gh pr merge <N>` merge whose head SHA isn't in the local
-# object DB at all.
-if [ -z "$code_without_tests" ] && [ -n "$remote_changed" ]; then
-  tests="$(printf '%s\n' "$remote_changed" | grep -E "$test_re")"
-  code="$(printf '%s\n' "$remote_changed" | grep -vE "$test_re" | grep -E "$code_re")"
+if [ -n "$remote_changed" ]; then
+  code="$(code_of "$remote_changed")"
+  tests="$(tests_of "$remote_changed")"
   if [ -n "$code" ] && [ -z "$tests" ]; then
-    waived=""
-    if [ -n "$remote_head_sha" ] && [ -f "$ledger" ] && grep "\"sha\":\"$remote_head_sha\"" "$ledger" 2>/dev/null | grep -q '"verdict":"waived-tests:'; then
-      waived="yes"
+    if ! { printf '%s' "$head_sha" | grep -qE '^[0-9a-f]{40}$' && [ -f "$ledger" ] \
+           && grep "\"sha\":\"$head_sha\"" "$ledger" 2>/dev/null | grep -q '"verdict":"waived-tests:'; }; then
+      code_without_tests="$(printf '%s\n%s' "$code_without_tests" "$code")"
     fi
-    [ -n "$waived" ] || code_without_tests="$code"
   fi
 fi
 
@@ -157,10 +244,9 @@ fi
 
 {
   echo "⛔ test gate — this chunk changes code with NO test change:"
-  printf '%s\n' "$code_without_tests" | sed 's/^/    /'
+  printf '%s\n' "$code_without_tests" | sed '/^$/d; s/^/    /' | sort -u
   echo "Garth's standing rule (2026-07-16): tests for all the code we write."
-  echo "Add or update a test (src/**/*.test.ts colocated, or tests/) pinning the change,"
-  echo "or log an explicit waiver:"
+  echo 'Add or update a test (scripts/*.test.cjs, src/**/*.test.ts, or tests/) pinning the change, or log an explicit waiver:'
   echo "  scripts/attest-review.sh \"waived-tests: <reason>\""
 } >&2
 exit 2

@@ -75,6 +75,13 @@
       "observations": [
         "2026-11-03 fleet security baseline (doxa-cns config/fleet.yaml): .github/workflows/secret-scan.yml runs gitleaks 8.30.1 (job id 'gitleaks' = required check of the org ruleset 'fleet: PR + secret scan') on PR commits, and on all history weekly (Mon 04:17 UTC) and on dispatch; config .gitleaks.toml (default rules); classified history findings live in .gitleaksignore pinned to their commit. .github/dependabot.yml: weekly, limit 5, minor+patch grouped. Dependabot ecosystems: npm /, docker /, github-actions. Full-history scan: 0 findings. Fixed 3 HIGH + 5 medium + 2 low Dependabot alerts by an in-range lockfile update: undici 6.24.1->6.29.1, ws 8.20.1->8.22.1, discord.js 14.26.4->14.28.0 (npm audit 0). Fly.io deploy is manual (flyctl deploy, no CI deploy)."
       ]
+    },
+    {
+      "name": "CanonicalFleetGates",
+      "entityType": "Workflow",
+      "observations": [
+        "2026-11-05: this repo's five fleet gates (kg-save-gate.sh, review-gate.sh, test-gate.sh, scripts/attest-review.sh, kg-guard.yml) are now GENERATED from The-Doxa-Way-CNS fleet/gates/*.tmpl by scripts/generate-fleet-gates.mjs --repo doxa-discord-bot (decision docs/decisions/2026-11-05-canonical-fleet-gates.md; template fix PR #2379). Never hand-edit them here: fix the template and regenerate; check-hook-drift.mjs compares this copy on main daily. What the old copy lacked: test-gate.sh held a shell-expanded junk line (cmd_pr_repo built from '20 20 12 61 …'), so the remote PR file-list check for a plain merge never ran; pinned by scripts/test-gate-remote-pr.test.cjs, and npm test now runs scripts/*.test.cjs. Carries Wamemba me's no-re-review-of-a-blocked-commit rule: attest-review.sh 'blocked: <findings>' records SHA+tree and that code can never be attested."
+      ]
     }
   ],
   "relations": []

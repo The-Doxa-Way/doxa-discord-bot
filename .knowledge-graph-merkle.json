@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "33d92aab8b21c7dea382cc34cfb8a6ecd385a742345e987d48b112059fec423b",
+  "merkleRoot": "2ad755874dc8be827318adf22382b322aa37cb97b567dde2449e5d4cf535d0b2",
   "observations": [
     {
       "hash": "96f559925ed9b546ff1305077d3b6512daff4a0c13461846ad5ca309419e2ac8",
@@ -272,10 +272,27 @@
         "entityType": "Decision"
       },
       "timestamp": "2026-11-03T09:12:33.062Z"
+    },
+    {
+      "hash": "491cad635f3d4b5511bf68f6ec1e881df8c31acd41957f3e397d5da8f807f0b7",
+      "entityName": "CanonicalFleetGates",
+      "content": "2026-11-05: this repo's five fleet gates (kg-save-gate.sh, review-gate.sh, test-gate.sh, scripts/attest-review.sh, kg-guard.yml) are now GENERATED from The-Doxa-Way-CNS fleet/gates/*.tmpl by scripts/generate-fleet-gates.mjs --repo doxa-discord-bot (decision docs/decisions/2026-11-05-canonical-fleet-gates.md; template fix PR #2379). Never hand-edit them here: fix the template and regenerate; check-hook-drift.mjs compares this copy on main daily. What the old copy lacked: test-gate.sh held a shell-expanded junk line (cmd_pr_repo built from '20 20 12 61 …'), so the remote PR file-list check for a plain merge never ran; pinned by scripts/test-gate-remote-pr.test.cjs, and npm test now runs scripts/*.test.cjs. Carries Wamemba me's no-re-review-of-a-blocked-commit rule: attest-review.sh 'blocked: <findings>' records SHA+tree and that code can never be attested.",
+      "provenance": {
+        "sourceFile": ".claude/hooks/kg-save-gate.sh",
+        "lineNumber": 1,
+        "lineRange": null,
+        "fileHash": "50a4e56fd661b5922d006ab6df55bac3015caae9264d432f5541d15b4bafeb2f",
+        "totalLines": 620,
+        "extractedAt": "2026-11-05T16:05:25.786Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Workflow"
+      },
+      "timestamp": "2026-11-05T16:05:25.787Z"
     }
   ],
   "lastVerified": "2026-11-03T09:12:40.102Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-11-03T09:12:40.103Z"
+  "lastModified": "2026-11-05T16:05:25.794Z"
 }
