@@ -4,7 +4,9 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 COPY thedoxaway-mcp-client-*.tgz ./
-RUN npm install --omit=optional --no-audit --no-fund
+# Optional deps stay in the builder: TypeScript 7 ships its compiler as a
+# per-platform optional package (@typescript/typescript-<os>-<arch>).
+RUN npm install --no-audit --no-fund
 
 COPY tsconfig.json ./
 COPY src ./src
