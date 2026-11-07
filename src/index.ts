@@ -35,6 +35,7 @@ import { promiseCommand } from './commands/promise.js';
 import { privacyCommand } from './commands/privacy.js';
 import { PRIVACY_URL, pgConsentStore } from './consent.js';
 import { handleInteraction, mentionConsentGate } from './dispatch.js';
+import { DOXA_GUILD_ID, discordPort, syncServerProfile } from './server-profile.js';
 
 const DISCORD_BOT_TOKEN = required('DISCORD_BOT_TOKEN');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -80,6 +81,16 @@ client.once(Events.ClientReady, async (c) => {
     console.log(`✓ Synced ${COMMANDS.length} global slash command(s).`);
   } catch (err) {
     console.error('[register] Failed to sync commands on boot:', err);
+  }
+
+  // The Doxa server's description, #welcome topic and pinned welcome post are
+  // code-owned (src/server-profile.ts). Read, then write only what differs.
+  try {
+    const guild = await c.guilds.fetch(DOXA_GUILD_ID);
+    const result = await syncServerProfile(await discordPort(guild, c.user.id));
+    console.log(`[server-profile] ${JSON.stringify(result)}`);
+  } catch (err) {
+    console.error('[server-profile] sync skipped:', err instanceof Error ? err.message : err);
   }
 });
 

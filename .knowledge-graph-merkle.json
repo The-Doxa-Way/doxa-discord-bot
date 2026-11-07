@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "d4889473195750ce892311729627c2ece0ef9fce3e764b37fd451805b13afed4",
+  "merkleRoot": "47858e3fd0c0f6f4e6abcd4270b100251a3ff3e01710d1ed9968f926e0ef6621",
   "observations": [
     {
       "hash": "8395fc67811b05d355fa87543bb9e5b49035ece9b3d2d4cb674c8e7ebb326e47",
@@ -237,10 +237,27 @@
         "entityType": "Decision"
       },
       "timestamp": "2026-11-07T06:19:36.864Z"
+    },
+    {
+      "hash": "a9bd505ef4860b84b8f76d9137adbb6f934b615adc37e5f7a4fb35325174e70d",
+      "entityName": "DiscordServerProfileCodeOwned",
+      "content": "The Doxa Discord server's public text (server description, #welcome channel topic, #welcome pinned welcome post) is code-owned in src/server-profile.ts (doxa-brand Hard Rule 15, Garth 2026-11-07): each leads with 'Record and hold prophetic encouragement for decades.' and the description names 'Doxa: Prophetic Encouragement'. On ClientReady (every deploy/restart) the bot runs syncServerProfile: reads each item, writes only what differs, edits its OWN oldest pin in #welcome (or posts and pins a new one), and reports 'missing permission: <Flag>' instead of writing when it lacks ManageGuild / ManageChannels / PinMessages. Log line: [server-profile] {...}. The token never leaves the Fly machine. Guild 1520163816686747648, #welcome 1520163817256910930. Guard: src/server-profile.test.ts.",
+      "provenance": {
+        "sourceFile": "src/server-profile.ts",
+        "lineNumber": 1,
+        "lineRange": null,
+        "fileHash": "ae2e857a7a6906c57d2a2955910622b2d58c192e5d48a16b2f54765cf8ad6052",
+        "totalLines": 156,
+        "extractedAt": "2026-11-07T12:25:56.205Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Pattern"
+      },
+      "timestamp": "2026-11-07T12:25:56.206Z"
     }
   ],
-  "lastVerified": "2026-11-07T06:19:40.554Z",
+  "lastVerified": "2026-11-07T12:26:00.322Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-11-07T06:19:40.555Z"
+  "lastModified": "2026-11-07T12:26:00.322Z"
 }
