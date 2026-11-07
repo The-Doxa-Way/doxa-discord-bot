@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "a76629e691dc0efa6da0c3d6842b992a4c4d62eb9665afa2e0a2f126a928621f",
+  "merkleRoot": "d4889473195750ce892311729627c2ece0ef9fce3e764b37fd451805b13afed4",
   "observations": [
     {
       "hash": "8395fc67811b05d355fa87543bb9e5b49035ece9b3d2d4cb674c8e7ebb326e47",
@@ -220,10 +220,27 @@
         "entityType": "Decision"
       },
       "timestamp": "2026-11-06T04:51:08.915Z"
+    },
+    {
+      "hash": "ca4557ecc04a0002009eaaee1df21d8bfab4c20a46c109ee43fe9680814dce7b",
+      "entityName": "DockerBuilderTypeScript7Native",
+      "content": "TypeScript 7 (bumped 5.9.3->7.0.2, PR #17) ships its compiler as a per-platform optional package @typescript/typescript-<os>-<arch>; the Dockerfile builder stage therefore installs WITHOUT --omit=optional (with it, npm run build fails: 'Unable to resolve @typescript/typescript-linux-x64'). Runtime stage keeps --omit=optional because TS is a devDependency. No CI job builds the image, so a Dockerfile/dep regression is only caught at fly deploy.",
+      "provenance": {
+        "sourceFile": "Dockerfile",
+        "lineNumber": 7,
+        "lineRange": null,
+        "fileHash": "5fecb81067ada073914b42ce5e1b11935f2e70d64b4fa70ba55b062cb9b93322",
+        "totalLines": 31,
+        "extractedAt": "2026-11-07T06:19:36.864Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Decision"
+      },
+      "timestamp": "2026-11-07T06:19:36.864Z"
     }
   ],
-  "lastVerified": "2026-11-06T04:51:17.906Z",
+  "lastVerified": "2026-11-07T06:19:40.554Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-11-06T04:51:17.909Z"
+  "lastModified": "2026-11-07T06:19:40.555Z"
 }

@@ -4,9 +4,10 @@
 <!-- Lookup: Grep this file for your topic, then open the entity in graph.json. -->
 <!-- Never read graph.json whole for a lookup.   -->
 
-## Decision (2)
+## Decision (3)
 
 - DiscordBotKgFederation — 2026-11-06 (The-Doxa-Way-CNS spec the-doxa-way-control-tower F6): this repo's KG becomes CNS source doxa-disc…
+- DockerBuilderTypeScript7Native — TypeScript 7 (bumped 5.9.3->7.0.2, PR #17) ships its compiler as a per-platform optional package @typescript/…
 - GatesThatCannotFire20260815 — Applied the doxa-browser-extension gate fixes to this repo, which the kit was copied from. (1) 'gh repo view …
 
 ## Feature (2)

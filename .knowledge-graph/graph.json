@@ -60,6 +60,13 @@
       "observations": [
         "2026-11-06 (The-Doxa-Way-CNS spec the-doxa-way-control-tower F6): this repo's KG becomes CNS source doxa-discord-bot (authority/registry.yaml). Fleet-wide facts are held by the CNS meta-KG or by the other CNS sources (doxa-app, openclaw, doxa-shared), so this repo's copies were removed (federated, they opened conflicts; the Decision ones queue for Garth): KgMergeIntegrityGuard, FleetSecurityBaseline20261103, CanonicalFleetGates, KgGuardRequiredCheckNaming, FleetGates. LandingGatesInfra (two other repos held different facts under that name) was renamed DiscordBotLandingGatesInfra. Rule: kg-save only facts about THIS repo here, under a repo-scoped name. A gate or fleet fact is a kg-save in The-Doxa-Way-CNS; a gate re-render PR here carries no KG change (title it chore(sync): ..., which KG Guard exempts)."
       ]
+    },
+    {
+      "name": "DockerBuilderTypeScript7Native",
+      "entityType": "Decision",
+      "observations": [
+        "TypeScript 7 (bumped 5.9.3->7.0.2, PR #17) ships its compiler as a per-platform optional package @typescript/typescript-<os>-<arch>; the Dockerfile builder stage therefore installs WITHOUT --omit=optional (with it, npm run build fails: 'Unable to resolve @typescript/typescript-linux-x64'). Runtime stage keeps --omit=optional because TS is a devDependency. No CI job builds the image, so a Dockerfile/dep regression is only caught at fly deploy."
+      ]
     }
   ],
   "relations": []
