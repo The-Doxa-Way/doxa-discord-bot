@@ -8,11 +8,13 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { ChannelType, PermissionFlagsBits, type Guild } from 'discord.js';
 
 import {
   GUILD_DESCRIPTION,
   WELCOME_POST_TEMPLATE,
   WELCOME_TOPIC,
+  discordPort,
   renderWelcomePost,
   syncServerProfile,
   type PinnedPost,
@@ -28,12 +30,13 @@ function fakePort(over: Partial<ServerPort> = {}, pins: PinnedPost[] = []) {
     botId: BOT,
     guildDescription: GUILD_DESCRIPTION,
     canManageGuild: true,
-    setGuildDescription: async (t) => { writes.push(`description:${t}`); },
+    setGuildDescription: async (t) => { writes.push(`description:${t}`); return t; },
     welcomeTopic: WELCOME_TOPIC,
     canManageChannel: true,
     setWelcomeTopic: async (t) => { writes.push(`topic:${t}`); },
     canSend: true,
     canPin: true,
+    canReadHistory: true,
     welcomePins: async () => pins,
     editMessage: async (id, c) => { writes.push(`edit:${id}:${c}`); },
     postAndPin: async (c) => { writes.push(`post:${c}`); },
@@ -111,4 +114,68 @@ test('the text obeys the brand hard rules and the Discord limits', () => {
     assert.doesNotMatch(text, /\bwords?\b/i, 'Hard Rule 13');
     assert.doesNotMatch(text, /\bburn/i, 'Hard Rule 14');
   }
+});
+
+test('without ReadMessageHistory the empty pin list is not trusted: no post', async () => {
+  const { port, writes } = fakePort({ canReadHistory: false });
+  assert.equal((await syncServerProfile(port)).pin, 'missing permission: ReadMessageHistory');
+  assert.deepEqual(writes, []);
+});
+
+test('without SendMessages nothing is posted', async () => {
+  const { port, writes } = fakePort({ canSend: false });
+  assert.equal((await syncServerProfile(port)).pin, 'missing permission: SendMessages');
+  assert.deepEqual(writes, []);
+});
+
+test('a newer bot pin that already matches is ok: no edit', async () => {
+  const pins = [
+    { id: 'newer', authorId: BOT, content: current },
+    { id: 'older', authorId: BOT, content: 'stale' },
+  ];
+  const { port, writes } = fakePort({}, pins);
+  assert.equal((await syncServerProfile(port)).pin, 'ok');
+  assert.deepEqual(writes, []);
+});
+
+test('a description Discord did not store is reported, not called updated', async () => {
+  const { port } = fakePort({ guildDescription: null, setGuildDescription: async () => null });
+  assert.equal((await syncServerProfile(port)).description, 'failed: not applied');
+});
+
+test('discordPort: permission mapping, text-channel links, and a failed pin removes the sent copy', async () => {
+  const granted = new Set([
+    PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages,
+    PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageMessages,
+  ]);
+  const deleted: string[] = [];
+  const channel = {
+    topic: 'old',
+    permissionsFor: () => ({ has: (f: bigint) => granted.has(f) }),
+    send: async () => ({
+      pin: async () => { throw new Error('Maximum number of pins reached'); },
+      delete: async () => { deleted.push('sent'); },
+    }),
+    messages: { fetchPins: async () => ({ hasMore: false, items: [{ message: { id: 'm1', author: { id: BOT }, content: 'x' } }] }) },
+  };
+  const cache = new Map<string, unknown>([
+    ['v', { id: '90', name: 'prayer', type: ChannelType.GuildVoice }],
+    ['t', { id: '13', name: 'prayer', type: ChannelType.GuildText }],
+    ['t2', { id: '99', name: 'prayer', type: ChannelType.GuildText }],
+  ]);
+  const guild = {
+    description: 'old',
+    members: { me: { permissions: { has: () => false } } },
+    channels: { fetch: async () => channel, cache },
+  } as unknown as Guild;
+  const port = await discordPort(guild, BOT);
+  assert.equal(port.canManageGuild, false);
+  assert.equal(port.canManageChannel, false);
+  assert.equal(port.canSend, true);
+  assert.equal(port.canPin, false, 'ManageMessages alone does not grant pinning');
+  assert.equal(port.canReadHistory, true);
+  assert.deepEqual(port.channelIds, { prayer: '13' });
+  assert.deepEqual(await port.welcomePins(), [{ id: 'm1', authorId: BOT, content: 'x' }]);
+  await assert.rejects(port.postAndPin('hello'), /Maximum number of pins/);
+  assert.deepEqual(deleted, ['sent']);
 });

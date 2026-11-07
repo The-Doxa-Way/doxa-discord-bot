@@ -10,7 +10,7 @@
  * permission for an item it writes nothing and reports the permission it
  * lacks, so the log says exactly what to grant.
  */
-import { PermissionFlagsBits, type Guild, type TextChannel } from 'discord.js';
+import { ChannelType, PermissionFlagsBits, type Guild, type TextChannel } from 'discord.js';
 
 export const DOXA_GUILD_ID = '1520163816686747648';
 export const WELCOME_CHANNEL_ID = '1520163817256910930';
@@ -54,12 +54,15 @@ export interface ServerPort {
   botId: string;
   guildDescription: string | null;
   canManageGuild: boolean;
-  setGuildDescription(text: string): Promise<void>;
+  /** Returns the description Discord actually stored. */
+  setGuildDescription(text: string): Promise<string | null>;
   welcomeTopic: string | null;
   canManageChannel: boolean;
   setWelcomeTopic(text: string): Promise<void>;
   canSend: boolean;
   canPin: boolean;
+  /** Without ReadMessageHistory Discord returns an EMPTY pin list, not an error. */
+  canReadHistory: boolean;
   welcomePins(): Promise<PinnedPost[]>;
   editMessage(id: string, content: string): Promise<void>;
   postAndPin(content: string): Promise<void>;
@@ -87,8 +90,8 @@ export async function syncServerProfile(port: ServerPort): Promise<SyncResult> {
   const description = await step(async () => {
     if (port.guildDescription === GUILD_DESCRIPTION) return 'ok';
     if (!port.canManageGuild) return 'missing permission: ManageGuild';
-    await port.setGuildDescription(GUILD_DESCRIPTION);
-    return 'updated';
+    const stored = await port.setGuildDescription(GUILD_DESCRIPTION);
+    return stored === GUILD_DESCRIPTION ? 'updated' : 'failed: not applied';
   });
 
   const topic = await step(async () => {
@@ -100,6 +103,9 @@ export async function syncServerProfile(port: ServerPort): Promise<SyncResult> {
 
   const pin = await step(async () => {
     const want = renderWelcomePost(port.channelIds);
+    // An empty pin list cannot be trusted without history: a post here would
+    // repeat on every restart.
+    if (!port.canReadHistory) return 'missing permission: ReadMessageHistory';
     // The bot can edit only its own messages, so it owns the pin it authored.
     const mine = (await port.welcomePins()).filter((p) => p.authorId === port.botId);
     if (mine.some((p) => p.content === want)) return 'ok';
@@ -126,18 +132,23 @@ export async function discordPort(guild: Guild, botId: string): Promise<ServerPo
   const perms = channel.permissionsFor(me);
   const has = (flag: bigint) => perms?.has(flag) ?? false;
   const channelIds: Record<string, string> = {};
-  for (const c of guild.channels.cache.values()) channelIds[c.name] = c.id;
+  for (const c of guild.channels.cache.values()) {
+    const text = c.type === ChannelType.GuildText || c.type === ChannelType.GuildAnnouncement;
+    if (text && !(c.name in channelIds)) channelIds[c.name] = c.id;
+  }
 
   return {
     botId,
     guildDescription: guild.description,
     canManageGuild: me.permissions.has(PermissionFlagsBits.ManageGuild),
-    setGuildDescription: async (text) => { await guild.edit({ description: text }); },
+    setGuildDescription: async (text) => (await guild.edit({ description: text })).description,
     welcomeTopic: channel.topic,
     canManageChannel: has(PermissionFlagsBits.ManageChannels),
     setWelcomeTopic: async (text) => { await channel.setTopic(text); },
     canSend: has(PermissionFlagsBits.ViewChannel) && has(PermissionFlagsBits.SendMessages),
-    canPin: has(PermissionFlagsBits.PinMessages) || has(PermissionFlagsBits.ManageMessages),
+    // Discord split pinning out of ManageMessages into PinMessages.
+    canPin: has(PermissionFlagsBits.PinMessages),
+    canReadHistory: has(PermissionFlagsBits.ReadMessageHistory),
     welcomePins: async () => {
       const res = await channel.messages.fetchPins();
       return res.items.map((p) => ({ id: p.message.id, authorId: p.message.author.id, content: p.message.content }));
@@ -148,7 +159,14 @@ export async function discordPort(guild: Guild, botId: string): Promise<ServerPo
     },
     postAndPin: async (content) => {
       const msg = await channel.send({ content, allowedMentions: { parse: [] } });
-      await msg.pin();
+      try {
+        await msg.pin();
+      } catch (err) {
+        // An unpinned copy would be invisible to the next sync and repeat on
+        // every restart, so remove it.
+        await msg.delete().catch(() => {});
+        throw err;
+      }
     },
     channelIds,
   };
