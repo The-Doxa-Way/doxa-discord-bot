@@ -23,6 +23,10 @@
 
 - DockerBaseImageNode22 — Bumped Dockerfile builder+runtime base images from node:20-slim to node:22-slim: Node 20 is EOL and received …
 
+## Pattern (1)
+
+- DiscordServerProfileCodeOwned — The Doxa Discord server's public text (server description, #welcome channel topic, #welcome pinned welcome po…
+
 ## Policy (1)
 
 - DoxaIsNotAPerson — Garth 2026-09-02, on the Discord mention prompt 'Tell me what you are facing and I will encourage you': 'I ha…
