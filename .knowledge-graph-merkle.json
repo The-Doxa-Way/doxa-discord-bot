@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "d521d717b64bc37d0f77ba0f82114ce8c64ce4cce1a28b606eedb90b7b7cc411",
+  "merkleRoot": "09764113a6292797381c5d40d4a51ac3c1d6a64e212878b710164cfb47dece50",
   "observations": [
     {
       "hash": "8395fc67811b05d355fa87543bb9e5b49035ece9b3d2d4cb674c8e7ebb326e47",
@@ -270,10 +270,27 @@
         "extractedBy": "knowledge-graph-merkle.cjs"
       },
       "timestamp": "2026-11-07T12:42:58.323Z"
+    },
+    {
+      "hash": "a680d597137a7260bc592554f33f44abac3220059124c3ee01d37593b0f3be67",
+      "entityName": "MaxReviewBeforePushGate",
+      "content": "Garth 2026-11-11 order: one /code-review max pass before every push of code. This repo now runs the fleet-template PreToolUse hook .claude/hooks/push-review-gate.sh (rendered from doxa-cns fleet/gates; doxa-cns KG MaxReviewBeforePushDoctrine, PR #2905): a git push of new code commits (not on main) needs ATTEST_REVIEW_LEVEL=max scripts/attest-review.sh <verdict>, or a logged 'waived:' row (docs-only: 'waived: docs-only: <reason>'), or PUSH_GATE_WAIVE=<reason> for a human-review-only push (no attestation, no merge authority). Exempt: deletes, tags, notes, a tip already on main, KG-only commits. Baseline 7 days to 2026-11-11: 48 runs, 3 failures, 0 reruns.",
+      "provenance": {
+        "sourceFile": ".claude/hooks/push-review-gate.sh",
+        "lineNumber": 1,
+        "lineRange": null,
+        "fileHash": "beaa24193e4caa112b8b5cfc22dcb73e242f648f8473dcb432ba2de5980c47d6",
+        "totalLines": 453,
+        "extractedAt": "2026-11-11T15:30:59.734Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Reference"
+      },
+      "timestamp": "2026-11-11T15:30:59.735Z"
     }
   ],
   "lastVerified": "2026-11-07T12:26:00.322Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-11-07T12:42:58.323Z"
+  "lastModified": "2026-11-11T15:30:59.743Z"
 }
