@@ -31,6 +31,10 @@
 
 - DoxaIsNotAPerson — Garth 2026-09-02, on the Discord mention prompt 'Tell me what you are facing and I will encourage you': 'I ha…
 
+## Reference (1)
+
+- MaxReviewBeforePushGate — Garth 2026-11-11 order: one /code-review max pass before every push of code. This repo now runs the fleet-tem…
+
 ## Workflow (1)
 
 - DiscordBotLandingGatesInfra — Bootstrapped Doxa landing-gates infra (kg-guard CI, claude-code-review workflow, kg-save/review/test PreToolU…
