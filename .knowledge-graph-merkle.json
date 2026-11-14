@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "990fcdb05f4e1ffb27f987d71c51da2393a178ae21099abb3fea756724fa8aee",
+  "merkleRoot": "ddfaa643aedf976bf223b15528010f40b7c4d816abfdbc71e09455f76386fa64",
   "observations": [
     {
       "hash": "8395fc67811b05d355fa87543bb9e5b49035ece9b3d2d4cb674c8e7ebb326e47",
@@ -304,10 +304,27 @@
         "entityType": "Reference"
       },
       "timestamp": "2026-11-14T08:53:10.008Z"
+    },
+    {
+      "hash": "8d56437b8cc894194cb74fec75f752079f882bcb79ec29e9b43db855853eb844",
+      "entityName": "MonitorToolHookMatcherDoctrine",
+      "content": "2026-11-14 doxa-discord-bot: the 4 PreToolUse gate hooks (kg-save, review, push-review, test) in .claude/settings.json moved from matcher Bash to Bash|Monitor; Claude Code 2.1.310 fires Bash hooks only for Bash, so git push / gh pr merge through Monitor skipped them. scripts/hook-matchers-monitor.test.cjs (run by npm test) fails on a Bash-only entry or a gate missing Bash or Monitor.",
+      "provenance": {
+        "sourceFile": ".claude/settings.json",
+        "lineNumber": 5,
+        "lineRange": null,
+        "fileHash": "e6bcc197932238b41173819d8ff44e2334a9c73dc621264bd1b3998266e8e206",
+        "totalLines": 71,
+        "extractedAt": "2026-11-14T16:16:01.020Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Reference"
+      },
+      "timestamp": "2026-11-14T16:16:01.021Z"
     }
   ],
   "lastVerified": "2026-11-14T08:53:10.094Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-11-14T08:53:10.095Z"
+  "lastModified": "2026-11-14T16:16:01.032Z"
 }
