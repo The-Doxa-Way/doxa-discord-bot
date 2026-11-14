@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "09764113a6292797381c5d40d4a51ac3c1d6a64e212878b710164cfb47dece50",
+  "merkleRoot": "990fcdb05f4e1ffb27f987d71c51da2393a178ae21099abb3fea756724fa8aee",
   "observations": [
     {
       "hash": "8395fc67811b05d355fa87543bb9e5b49035ece9b3d2d4cb674c8e7ebb326e47",
@@ -287,10 +287,27 @@
         "entityType": "Reference"
       },
       "timestamp": "2026-11-11T15:30:59.735Z"
+    },
+    {
+      "hash": "4913dc8e48d116049aa56cbe9f558fea794741ae78059b2011c49ca380bb9126",
+      "entityName": "DiscordBotClaudeMd",
+      "content": "2026-11-14 (CEO order: the 13-14 Nov work applies to ALL repos): first CLAUDE.md for this repo, 68 lines. CEO ownership line; what the bot is; real verify commands (npm run typecheck, npm run build, npm test; no lint; CI runs none of them); verified gotchas (flyctl deploy by hand from a clean main, no CI image build, privileged Message Content intent, DATABASE_URL as role discord_bot from the Keychain, Art. 9 consent gate at CONSENT_GATED_COMMANDS + mentionConsentGate, server profile code-owned); landing doctrine (kg-save, max review, attest the exact head SHA, push, merge). Points to The-Doxa-Way-CNS CLAUDE.md and docs/org-map.md. AGENTS.md is generated from it by doxa-cns generate-agents-md.mjs.",
+      "provenance": {
+        "sourceFile": "CLAUDE.md",
+        "lineNumber": null,
+        "lineRange": null,
+        "fileHash": "706c8958a03d78d0dda7fa28ccc043b809d618930d36de1ae468d7bb6addd59c",
+        "totalLines": 69,
+        "extractedAt": "2026-11-14T08:53:10.007Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "Reference"
+      },
+      "timestamp": "2026-11-14T08:53:10.008Z"
     }
   ],
-  "lastVerified": "2026-11-07T12:26:00.322Z",
+  "lastVerified": "2026-11-14T08:53:10.094Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-11-11T15:30:59.743Z"
+  "lastModified": "2026-11-14T08:53:10.095Z"
 }

@@ -82,6 +82,13 @@
       "observations": [
         "Garth 2026-11-11 order: one /code-review max pass before every push of code. This repo now runs the fleet-template PreToolUse hook .claude/hooks/push-review-gate.sh (rendered from doxa-cns fleet/gates; doxa-cns KG MaxReviewBeforePushDoctrine, PR #2905): a git push of new code commits (not on main) needs ATTEST_REVIEW_LEVEL=max scripts/attest-review.sh <verdict>, or a logged 'waived:' row (docs-only: 'waived: docs-only: <reason>'), or PUSH_GATE_WAIVE=<reason> for a human-review-only push (no attestation, no merge authority). Exempt: deletes, tags, notes, a tip already on main, KG-only commits. Baseline 7 days to 2026-11-11: 48 runs, 3 failures, 0 reruns."
       ]
+    },
+    {
+      "name": "DiscordBotClaudeMd",
+      "entityType": "Reference",
+      "observations": [
+        "2026-11-14 (CEO order: the 13-14 Nov work applies to ALL repos): first CLAUDE.md for this repo, 68 lines. CEO ownership line; what the bot is; real verify commands (npm run typecheck, npm run build, npm test; no lint; CI runs none of them); verified gotchas (flyctl deploy by hand from a clean main, no CI image build, privileged Message Content intent, DATABASE_URL as role discord_bot from the Keychain, Art. 9 consent gate at CONSENT_GATED_COMMANDS + mentionConsentGate, server profile code-owned); landing doctrine (kg-save, max review, attest the exact head SHA, push, merge). Points to The-Doxa-Way-CNS CLAUDE.md and docs/org-map.md. AGENTS.md is generated from it by doxa-cns generate-agents-md.mjs."
+      ]
     }
   ],
   "relations": []
