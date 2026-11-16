@@ -38,6 +38,10 @@
 
 - DoxaIsNotAPerson — Garth 2026-09-02, on the Discord mention prompt 'Tell me what you are facing and I will encourage you': 'I ha…
 
+## System (1)
+
+- FleetGateReviewModes — 2026-11-16: gates re-rendered from doxa-cns #3050 (two max modes). Max diffs: ONE opus-reviewer pass (prompt …
+
 ## Workflow (1)
 
 - DiscordBotLandingGatesInfra — Bootstrapped Doxa landing-gates infra (kg-guard CI, claude-code-review workflow, kg-save/review/test PreToolU…

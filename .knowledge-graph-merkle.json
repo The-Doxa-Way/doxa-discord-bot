@@ -1,5 +1,5 @@
 {
-  "merkleRoot": "160e82da04233ba2fca75276b019c5b0bd59f32c755571abf543d6676db1059c",
+  "merkleRoot": "2ee9f4149d4cadf2355e0e7b331c9d1bed08a4e290e276fd6de330b03361e7b0",
   "observations": [
     {
       "hash": "8395fc67811b05d355fa87543bb9e5b49035ece9b3d2d4cb674c8e7ebb326e47",
@@ -338,10 +338,27 @@
         "entityType": "Reference"
       },
       "timestamp": "2026-11-15T11:03:19.156Z"
+    },
+    {
+      "hash": "00b41bd9935dd168b882c2b00a3fd80ee64882c08768a3588150b4e99d424307",
+      "entityName": "FleetGateReviewModes",
+      "content": "2026-11-16: gates re-rendered from doxa-cns #3050 (two max modes). Max diffs: ONE opus-reviewer pass (prompt review-mode max <worktree>); max-fanout (money/auth/SQL/user data/safety/outbound/gate machinery): /code-review max fan-out. attest-review.sh fails closed to max-fanout when it cannot read the tier; the attest test fixture moved to max-fanout; CLAUDE.md names both modes.",
+      "provenance": {
+        "sourceFile": ".claude/hooks/push-review-gate.sh",
+        "lineNumber": null,
+        "lineRange": null,
+        "fileHash": "2bbada834dada6e6f035dadbe96f2ddfaba91e6cee9909a727fb151eb10315f0",
+        "totalLines": 608,
+        "extractedAt": "2026-11-16T09:17:04.561Z",
+        "verificationStatus": "verified",
+        "extractedBy": "knowledge-graph-merkle.cjs",
+        "entityType": "System"
+      },
+      "timestamp": "2026-11-16T09:17:04.561Z"
     }
   ],
   "lastVerified": "2026-11-14T08:53:10.094Z",
   "version": 1,
   "createdAt": "2026-08-11T16:39:44.892Z",
-  "lastModified": "2026-11-15T11:03:19.163Z"
+  "lastModified": "2026-11-16T09:17:04.572Z"
 }
