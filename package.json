@@ -25,7 +25,7 @@
   "dependencies": {
     "@thedoxaway/mcp-client": "file:./thedoxaway-mcp-client-0.2.0.tgz",
     "discord.js": "^14.28.1",
-    "postgres": "^4.1.0"
+    "postgres": "^4.1.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
